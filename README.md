@@ -54,6 +54,15 @@ Anyone who has opened the **Model view** in Power BI Desktop on a complex semant
 
 ADAM will appear in the **External Tools** ribbon in Power BI Desktop.
 
+> **Windows SmartScreen warning**
+>
+> When running the installer you may see a "Windows protected your PC" message listing the publisher as unknown. This is expected - ADAM is not yet code-signed with a paid certificate. It is safe to proceed:
+>
+> 1. Click **More info**
+> 2. Click **Run anyway**
+>
+> Greyskull Analytics is working towards a signed release in a future version. In the meantime, the standalone `.exe` (Option A above) can be used as an alternative if your organisation does not allow unsigned installers.
+
 ---
 
 ## How to use
