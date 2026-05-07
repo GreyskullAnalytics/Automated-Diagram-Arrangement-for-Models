@@ -1,0 +1,3 @@
+# Releases are built and published automatically from the private source repository.
+# This file exists so GitHub recognises the workflows folder.
+# No action is required here.
