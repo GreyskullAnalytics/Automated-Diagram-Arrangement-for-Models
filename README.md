@@ -118,19 +118,47 @@ ADAM supports thin reports - `.pbip` files that connect to a published dataset i
 
 ### What works in all cases
 
-- Layout diagrams are written to the local `.pbip` file (`semanticModelDiagramLayout.json`) and work regardless of workspace capacity.
+Layout diagrams are written to the local `.pbip` file (`semanticModelDiagramLayout.json`) regardless of workspace capacity. Layouts always apply.
 
 ### Automatic table classification
 
-Automatic classification (fact, dimension, bridge, etc.) requires reading the model's relationship metadata. This depends on your workspace capacity:
+Automatic classification (fact, dimension, bridge, etc.) requires reading the model's relationship metadata via the XMLA endpoint. The behaviour depends on your workspace capacity:
 
-| Workspace type | Auto-classification | Notes |
+| Workspace type | Auto-classification | How it connects |
 |---|---|---|
-| **Premium / PPU** with XMLA enabled | ✅ Full | Works automatically |
-| **Premium / PPU** with XMLA disabled | ⚠️ Manual | Enable XMLA in Power BI admin portal → Workspace settings |
-| **Pro** | ⚠️ Manual | XMLA is not available on Pro workspaces |
+| **Fabric capacity (F SKU)** | ✅ Full | Automatic via PBI Desktop session (ClaimsToken) |
+| **Premium P SKU** | ✅ Full | Automatic via PBI Desktop session (ClaimsToken) |
+| **PPU (Premium Per User)** | ⚠️ Requires sign-in | PPU uses a legacy endpoint - see below |
+| **Pro** | ⚠️ Manual only | No XMLA access - table names read from existing diagram |
 
-When automatic classification is not available, ADAM falls back to reading table names from the existing model view diagram. All tables are shown as **DISCONNECTED** - use the dropdown on each row to manually classify them before applying a layout.
+When automatic classification is not available, ADAM shows all tables as **DISCONNECTED**. Use the dropdown on each row to classify them manually before applying a layout.
+
+### PPU workspaces - Microsoft sign-in required
+
+PPU (Premium Per User) workspaces use a legacy XMLA endpoint format (`pbiazure://`) that Power BI Desktop does not expose to External Tools in the same way as Fabric or Premium P capacities. As a result, ADAM cannot reuse the existing PBI Desktop session and instead uses **Microsoft Authentication Library (MSAL)** to authenticate independently.
+
+#### What this means for users
+
+The first time a user launches ADAM against a PPU thin report, their default browser will open to a Microsoft sign-in page. After signing in and accepting the permissions prompt, the token is cached - all future connections are silent with no browser prompt.
+
+The sign-in page will request the following permission on behalf of ADAM:
+
+- **Dataset.Read.All** - read-only access to Power BI datasets (ADAM never writes to the dataset)
+
+ADAM's Azure AD app registration is named **ADAM - MSAL** (Client ID: `019dbda8-33ea-4bd2-9930-e156baa68702`).
+
+#### Admin consent for organisations
+
+Some organisations configure their Microsoft 365 tenant to require administrator approval before users can grant permissions to third-party applications. If users see a "Need admin approval" page rather than an Accept button, a Power BI or Azure AD administrator needs to grant consent once on behalf of the organisation.
+
+**Admin consent URL:**
+```
+https://login.microsoftonline.com/common/adminconsent?client_id=019dbda8-33ea-4bd2-9930-e156baa68702
+```
+
+An administrator visiting this URL and clicking **Accept** will approve ADAM for all users in the tenant. Users will then connect silently without any browser prompt.
+
+> **Note:** Admin consent is only required if your organisation has disabled user consent for third-party apps. Many organisations allow users to consent individually, in which case no admin action is needed.
 
 ---
 
