@@ -20,7 +20,7 @@ Anyone who has opened the **Model view** in Power BI Desktop on a complex semant
 - **Per-fact diagrams** - one focused diagram per fact table for large, complex models
 - Minimises crossing relationship lines using barycenter ordering
 - Works with both `.pbip` (recommended) and `.pbix` files
-- Launched directly from the **External Tools** ribbon in Power BI Desktop
+- Launched from the **External Tools** ribbon (installer) or directly as a standalone app (portable)
 - Dark mode support, system-default theme detection
 
 ---
@@ -35,40 +35,39 @@ Anyone who has opened the **Model view** in Power BI Desktop on a complex semant
 
 ## Installation
 
-### Option A - Standalone (no admin required)
-
-1. Download `ADAM-standalone-x.x.x.exe` from [Releases](../../releases)
-2. Place it anywhere on your machine
-3. Copy `adam.pbitool.json` (included in the release) to:
-   ```
-   C:\Program Files (x86)\Common Files\Microsoft Shared\Power BI Desktop\External Tools\
-   ```
-   *(This step requires admin rights - ask your IT team if needed)*
-4. Restart Power BI Desktop
-
-### Option B - Installer (admin required, recommended)
+### Option A - Installer (recommended)
 
 1. Download `ADAM-setup-x.x.x.exe` from [Releases](../../releases)
-2. Run the installer - it handles everything including External Tools registration
+2. Run the installer — it handles everything including External Tools registration
 3. Restart Power BI Desktop
 
-ADAM will appear in the **External Tools** ribbon in Power BI Desktop.
+> Requires local admin rights. Ask your IT team if needed.
+
+### Option B - Portable (no admin required)
+
+1. Download `ADAM-x.x.x.exe` from [Releases](../../releases)
+2. Place it anywhere on your machine (Desktop, a shared folder, etc.)
+3. Launch `ADAM.exe` directly
+
+The portable version does **not** appear in the External Tools ribbon. Instead, open your Power BI file first, then launch ADAM and select the file from the dropdown — ADAM will detect all currently open Power BI Desktop instances and let you connect to one.
 
 > **Windows SmartScreen warning**
 >
-> When running the installer you may see a "Windows protected your PC" message listing the publisher as unknown. This is expected - ADAM is not yet code-signed with a paid certificate. It is safe to proceed:
+> When running the installer or the portable `.exe` you may see a "Windows protected your PC" message listing the publisher as unknown. This is expected - ADAM is not yet code-signed with a paid certificate. It is safe to proceed:
 >
 > 1. Click **More info**
 > 2. Click **Run anyway**
 >
-> Greyskull Analytics is working towards a signed release in a future version. In the meantime, the standalone `.exe` (Option A above) can be used as an alternative if your organisation does not allow unsigned installers.
+> Greyskull Analytics is working towards a signed release in a future version. In the meantime, the portable `.exe` (Option B above) can be used as an alternative if your organisation does not allow unsigned installers.
 
 ---
 
 ## How to use
 
 1. Open your `.pbip` or `.pbix` file in Power BI Desktop
-2. Click **ADAM** in the External Tools ribbon
+2. Launch ADAM:
+   - **Installer**: click **ADAM** in the External Tools ribbon — ADAM opens connected to the active file automatically
+   - **Portable**: launch `ADAM.exe` directly, then select your open Power BI file from the dropdown and click **Connect**
 3. Review the table classifications in the list - override any you disagree with using the dropdown on each row
 4. Choose a **Layout Style** and **Mode**
 5. Click **Apply [Style] Layout**
@@ -112,53 +111,19 @@ Microsoft recommends migrating to `.pbip` for all new development. You can conve
 
 ---
 
-## Thin reports (live-connected to Power BI Service)
+## Thin reports (not supported)
 
-ADAM supports thin reports - `.pbip` files that connect to a published dataset in the Power BI Service rather than containing a local model definition.
+Thin reports — Power BI files whose semantic model is hosted in the Power BI Service rather than stored locally — are **not supported by ADAM**.
 
-### What works in all cases
+ADAM reads model metadata (tables, relationships, column counts) directly from the local Analysis Services instance that Power BI Desktop runs when a file is open. Thin reports do not have a local model for ADAM to read, so automatic table classification is not possible.
 
-Layout diagrams are written to the local `.pbip` file (`semanticModelDiagramLayout.json`) regardless of workspace capacity. Layouts always apply.
+If you open a thin report and launch ADAM from the External Tools ribbon, you will see a "Thin Reports Not Supported" message. After dismissing it, ADAM will show the file picker so you can connect to a different open Power BI file instead.
 
-### Automatic table classification
+### What to do instead
 
-Automatic classification (fact, dimension, bridge, etc.) requires reading the model's relationship metadata via the XMLA endpoint. The behaviour depends on your workspace capacity:
-
-| Workspace type | Auto-classification | How it connects |
-|---|---|---|
-| **Fabric capacity (F SKU)** | ✅ Full | Automatic via PBI Desktop session (ClaimsToken) |
-| **Premium P SKU** | ✅ Full | Automatic via PBI Desktop session (ClaimsToken) |
-| **PPU (Premium Per User)** | ⚠️ Requires sign-in | PPU uses a legacy endpoint - see below |
-| **Pro** | ⚠️ Manual only | No XMLA access - table names read from existing diagram |
-
-When automatic classification is not available, ADAM shows all tables as **DISCONNECTED**. Use the dropdown on each row to classify them manually before applying a layout.
-
-### PPU workspaces - Microsoft sign-in required
-
-PPU (Premium Per User) workspaces use a legacy XMLA endpoint format (`pbiazure://`) that Power BI Desktop does not expose to External Tools in the same way as Fabric or Premium P capacities. As a result, ADAM cannot reuse the existing PBI Desktop session and instead uses **Microsoft Authentication Library (MSAL)** to authenticate independently.
-
-#### What this means for users
-
-The first time a user launches ADAM against a PPU thin report, their default browser will open to a Microsoft sign-in page. After signing in and accepting the permissions prompt, the token is cached - all future connections are silent with no browser prompt.
-
-The sign-in page will request the following permission on behalf of ADAM:
-
-- **Dataset.Read.All** - read-only access to Power BI datasets (ADAM never writes to the dataset)
-
-ADAM's Azure AD app registration is named **ADAM - MSAL** (Client ID: `019dbda8-33ea-4bd2-9930-e156baa68702`).
-
-#### Admin consent for organisations
-
-Some organisations configure their Microsoft 365 tenant to require administrator approval before users can grant permissions to third-party applications. If users see a "Need admin approval" page rather than an Accept button, a Power BI or Azure AD administrator needs to grant consent once on behalf of the organisation.
-
-**Admin consent URL:**
-```
-https://login.microsoftonline.com/common/adminconsent?client_id=019dbda8-33ea-4bd2-9930-e156baa68702
-```
-
-An administrator visiting this URL and clicking **Accept** will approve ADAM for all users in the tenant. Users will then connect silently without any browser prompt.
-
-> **Note:** Admin consent is only required if your organisation has disabled user consent for third-party apps. Many organisations allow users to consent individually, in which case no admin action is needed.
+- Open the **semantic model** (`.pbip` or `.pbix`) directly in Power BI Desktop rather than a thin report that references it.
+- If you only have the thin report, consider downloading the semantic model from the Power BI Service and working with it locally.
+- If you have other Power BI files already open in Desktop, select one from the dropdown after dismissing the message.
 
 ---
 
