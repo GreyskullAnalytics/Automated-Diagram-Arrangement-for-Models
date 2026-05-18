@@ -5,6 +5,8 @@
 > **A free Power BI External Tool by [Greyskull Analytics](https://www.greyskullanalytics.com)**  
 > *Data Solutions that make businesses better*
 
+> **Current release:** v0.7.0 · May 2026
+
 ADAM automatically arranges the tables in your Power BI model view into clean, readable diagrams - eliminating the hours spent manually dragging tables around every time your model changes.
 
 ![ADAM Screenshot](docs/screenshot.png)
@@ -17,9 +19,11 @@ Anyone who has opened the **Model view** in Power BI Desktop on a complex semant
 
 - Supports **Waterfall**, **Star Schema**, and **Inverted L** layout styles
 - Automatically classifies tables as facts, dimensions, bridges, outriggers, and disconnected
-- **Per-fact diagrams** - one focused diagram per fact table for large, complex models
+- **Per-fact diagrams** — one focused diagram per fact table for large, complex models
+- **Queue multiple layouts** and apply them all in a single Power BI close/reopen cycle
 - Minimises crossing relationship lines using barycenter ordering
 - Works with both `.pbip` (recommended) and `.pbix` files
+- **CLI mode** for headless, AI-assisted workflows — no Power BI Desktop session required
 - Launched from the **External Tools** ribbon (installer) or directly as a standalone app (portable)
 - Dark mode support, system-default theme detection
 
@@ -68,9 +72,11 @@ The portable version does **not** appear in the External Tools ribbon. Instead, 
 2. Launch ADAM:
    - **Installer**: click **ADAM** in the External Tools ribbon — ADAM opens connected to the active file automatically
    - **Portable**: launch `ADAM.exe` directly, then select your open Power BI file from the dropdown and click **Connect**
-3. Review the table classifications in the list - override any you disagree with using the dropdown on each row
+3. Review the table classifications in the list — override any you disagree with using the dropdown on each row
 4. Choose a **Layout Style** and **Mode**
 5. Click **Apply [Style] Layout**
+
+ADAM will ask whether you'd like to add another layout before applying. This lets you queue multiple layouts — for example, a Full Model waterfall overview *and* a set of per-fact diagrams — and write them all to the file in a single Power BI close/reopen cycle.
 
 ### Layout Styles
 
@@ -100,6 +106,29 @@ ADAM automatically classifies each table based on its relationships:
 | 🟢 DISCONNECTED | No relationships | Not connected to any other table |
 
 You can override any classification using the dropdown on each row before applying.
+
+---
+
+## Using ADAM with AI assistants
+
+ADAM includes a **CLI mode** and an accompanying **AI skill file** so that AI assistants (Claude, GitHub Copilot, and others) can apply layouts on your behalf without opening the desktop application.
+
+### CLI usage
+
+```
+ADAM.exe --cli --file "MyModel.pbip" [--style waterfall|star-schema|inverted-l] [--mode full|per-fact] [--overwrite]
+```
+
+- Reads table and relationship metadata directly from the `.pbip` TMDL files on disk — no Power BI Desktop session required.
+- Writes the updated `diagramLayout.json` in place. Close and reopen the file in Power BI Desktop to see the result.
+- Supports all layout styles and modes available in the desktop application.
+- Exits with code `0` on success, `1` on error. Progress and results are written to stdout.
+
+### AI skill file
+
+The file `adam-skill.md` (available on the [Releases](../../releases) page and in `docs/`) describes ADAM's capabilities, arguments, and decision guidance in a format optimised for AI assistants. Drop it into your AI workflow and the assistant will know how and when to invoke the CLI.
+
+Supported platforms: **Claude** (Claude Code), **GitHub Copilot**, and any assistant that accepts markdown skill or instruction files.
 
 ---
 
