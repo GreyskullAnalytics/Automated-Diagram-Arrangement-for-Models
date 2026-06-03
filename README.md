@@ -5,7 +5,7 @@
 > **A free Power BI External Tool by [Greyskull Analytics](https://www.greyskullanalytics.com)**  
 > *Data Solutions that make businesses better*
 
-> **Current release:** v0.7.0 · May 2026
+> **Current release:** v0.8.0 · June 2026
 
 ADAM automatically arranges the tables in your Power BI model view into clean, readable diagrams - eliminating the hours spent manually dragging tables around every time your model changes.
 
@@ -49,7 +49,7 @@ Anyone who has opened the **Model view** in Power BI Desktop on a complex semant
 
 ### Option B - Portable (no admin required)
 
-1. Download `ADAM-x.x.x.exe` from [Releases](../../releases)
+1. Download `ADAM-standalone-x.x.x.exe` from [Releases](../../releases)
 2. Place it anywhere on your machine (Desktop, a shared folder, etc.)
 3. Launch `ADAM.exe` directly
 
@@ -161,6 +161,16 @@ If you open a thin report and launch ADAM from the External Tools ribbon, you wi
 ADAM is free and always will be. If it saves you time, Greyskull Analytics would really appreciate your support - it helps keep tools like this coming.
 
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-%23F1497A?style=for-the-badge&logo=buy-me-a-coffee&logoColor=white)](https://buymeacoffee.com/greyskullanalytics)
+
+---
+
+## Get Help & Support
+
+If you need help using ADAM or want to report an issue, please contact support:
+
+- **Email:** [support@greyskullanalytics.com](mailto:support@greyskullanalytics.com)
+- **Website:** [greyskullanalytics.com](https://www.greyskullanalytics.com)
+
 
 ---
 

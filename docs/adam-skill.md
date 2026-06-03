@@ -59,6 +59,8 @@ ADAM.exe --cli --file "<path-to-file.pbip>" [options]
 | `--mode <name>` | `full` | Scope of layout. One of: `full` (one diagram for all tables), `per-fact` (one diagram per fact table). |
 | `--diagram <name>` | Auto-generated | Custom name for the diagram (full-model mode only). |
 | `--overwrite` | *(not set)* | Overwrite an existing diagram with the same name. Without this flag, a numeric suffix is added instead (e.g. `"All Tables - Waterfall 2"`). |
+| `--list-classifications` | *(not set)* | Report all table classifications without applying a layout. Writes annotations to TMDL as a side effect. Cannot be combined with `--style`. |
+| `--set-classification "Name=Type"` | *(not set)* | Override the classification for a named table. Can be repeated for multiple tables. Valid types: `Fact`, `Dimension`, `Bridge`, `OutriggerBridge`, `Disconnected`. Can be combined with `--style` to override and then apply a layout in one step. |
 
 ---
 
@@ -112,17 +114,17 @@ Best for: models with multiple fact tables where a single all-tables diagram is 
 
 ## Table classification
 
-ADAM automatically classifies each table from the relationship structure. It does not read this from any metadata in the file — the classification is derived algorithmically:
+ADAM automatically classifies each table from the relationship structure and table name:
 
 | Classification | How detected |
 |----------------|-------------|
-| **Fact** | Has multiple foreign-key (many-side) relationships, or is bidirectional with multiple key columns |
+| **Fact** | Table name starts with `Fact` or `Fct`; or has multiple foreign-key (many-side) relationships; or has exactly one single-direction relationship on the many side; or is bidirectional with multiple key columns |
 | **Dimension** | Primarily on the one (primary-key) side of relationships; single foreign key if also on the many side |
 | **Bridge** | Bidirectional filter, single key column, connects a fact to a dimension |
 | **Outrigger Bridge** | Bidirectional, single key, connects a dimension to another dimension |
 | **Disconnected** | No relationships (typically a parameters or slicer table) |
 
-If the user believes a table has been misclassified, they can adjust classifications in the ADAM UI. The CLI does not support manual classification overrides — for classification control, use the desktop application.
+After each run, ADAM writes an `ADAM_Classification` annotation to each table's TMDL file. On subsequent runs these stored annotations take precedence over auto-detection, so manual overrides persist. Use `--list-classifications` to inspect the current state and `--set-classification` to override individual tables from the CLI.
 
 ---
 
@@ -192,6 +194,56 @@ ADAM.exe --cli --file "C:\Projects\SalesModel\SalesModel.pbip" --style star-sche
 
 ```
 ADAM.exe --cli --file "C:\Projects\SalesModel\SalesModel.pbip" --style waterfall --mode full --diagram "Overview Layout"
+```
+
+---
+
+### List current table classifications
+
+```
+ADAM.exe --cli --file "C:\Projects\SalesModel\SalesModel.pbip" --list-classifications
+```
+
+Expected output:
+```
+Reading model from SalesModel.SemanticModel...
+  12 table(s), 14 relationship(s)
+Classifying tables...
+
+  Table                    Classification
+  ───────────────────────  ────────────────
+  Sales                    Fact
+  Inventory                Fact
+  Budget                   Fact
+  Customer                 Dimension
+  Product                  Dimension
+  Date                     Dimension (stored)
+  ...
+
+3 facts, 7 dimensions, 0 bridges, 0 outriggers, 2 disconnecteds
+Annotations written.
+```
+
+`(stored)` indicates classifications that came from a previously saved `ADAM_Classification` annotation rather than auto-detection.
+
+---
+
+### Override a table classification
+
+```
+ADAM.exe --cli --file "C:\Projects\SalesModel\SalesModel.pbip" --set-classification "Budget=Fact"
+```
+
+Multiple overrides:
+
+```
+ADAM.exe --cli --file "C:\Projects\SalesModel\SalesModel.pbip" --set-classification "Budget=Fact" --set-classification "FxRates=Bridge"
+```
+
+Override and immediately apply a layout:
+
+```
+ADAM.exe --cli --file "C:\Projects\SalesModel\SalesModel.pbip" --set-classification "Budget=Fact" --style waterfall --mode per-fact
 ```
 
 ---
