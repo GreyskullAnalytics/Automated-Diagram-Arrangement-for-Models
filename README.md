@@ -5,7 +5,7 @@
 > **A free Power BI External Tool by [Greyskull Analytics](https://www.greyskullanalytics.com)**  
 > *Data Solutions that make businesses better*
 
-> **Current release:** v0.8.0 · June 2026
+> **Current release:** v0.8.1 · June 2026
 
 ADAM automatically arranges the tables in your Power BI model view into clean, readable diagrams - eliminating the hours spent manually dragging tables around every time your model changes.
 
