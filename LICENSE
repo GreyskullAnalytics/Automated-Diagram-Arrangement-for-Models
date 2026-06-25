@@ -31,7 +31,11 @@ TERMS AND CONDITIONS
    OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE.
 
-4. CONTACT
+4. THIRD-PARTY NOTICES
+   ADAM incorporates code adapted from open-source libraries. Full copyright
+   notices and licence texts for those components are in NOTICES.md.
+
+5. CONTACT
    For licensing enquiries or permission requests:
-   johnny@greyskullanalytics.com
+   support@greyskullanalytics.com
    https://www.greyskullanalytics.com
