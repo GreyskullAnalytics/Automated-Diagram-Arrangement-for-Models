@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ADAM v0.9.0 — Manual Test Plan</title>
+  <style>
+    :root {
+      --c-sa: #2272B4;  /* Store App — blue  */
+      --c-si: #117865;  /* Standalone — teal  */
+      --c-vi: #5F00C5;  /* Independent — purple */
+      --pass: #28a745; --fail: #dc3545; --skip-border: #e0ae00; --skip-text: #7a5c00;
+      --pass-light: #d4edda; --pass-dark: #155724;
+      --fail-light: #fde8e8; --fail-dark: #7d1e1e;
+      --skip-light: #fff3cd; --skip-dark: #7a5c00;
+      --bg: #f0f2f5; --card: #fff; --border: #e4e8ed; --text: #1a1a2e; --muted: #6c757d;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; }
+    .header { background: #1a1a2e; color: white; padding: 14px 24px; position: sticky; top: 0; z-index: 200; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+    .header-inner { max-width: 940px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .header h1 { font-size: 17px; font-weight: 700; margin-bottom: 1px; }
+    .header p  { font-size: 12px; opacity: 0.7; }
+    .version-badge { display: inline-block; background: #F2C811; color: #1a1a1a; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; margin-left: 7px; vertical-align: middle; }
+    .progress-wrap { min-width: 170px; text-align: right; }
+    .progress-label { font-size: 13px; font-weight: 600; margin-bottom: 5px; }
+    .progress-track { height: 5px; background: rgba(255,255,255,0.2); border-radius: 3px; overflow: hidden; }
+    .progress-fill  { height: 100%; background: white; border-radius: 3px; transition: width 0.3s ease; width: 0%; }
+    .main { max-width: 940px; margin: 0 auto; padding: 20px 14px 80px; }
+    .card { background: var(--card); border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.07), 0 1px 10px rgba(0,0,0,0.04); margin-bottom: 10px; overflow: hidden; }
+    .session-card { padding: 18px 22px; }
+    .section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 12px; }
+    .session-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .field-full { grid-column: 1 / -1; }
+    .field-label { display: block; font-size: 11.5px; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
+    input[type="text"], textarea { width: 100%; padding: 7px 11px; border: 1.5px solid var(--border); border-radius: 6px; font-family: inherit; font-size: 13px; color: var(--text); background: #fafbfc; transition: border-color 0.15s, box-shadow 0.15s; }
+    input[type="text"]:focus, textarea:focus { outline: none; border-color: var(--c-sa); box-shadow: 0 0 0 3px rgba(34,114,180,0.12); background: white; }
+    textarea { resize: vertical; }
+    .env-card { padding: 18px 22px; }
+    .env-list { list-style: none; }
+    .env-item { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--border); cursor: pointer; }
+    .env-item:last-child { border-bottom: none; }
+    .env-item input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--c-si); flex-shrink: 0; }
+    .env-item-label { font-size: 13px; cursor: pointer; user-select: none; }
+    .toolbar { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 8px; }
+    .toolbar-btn { font-size: 12px; font-weight: 600; color: var(--muted); background: none; border: none; cursor: pointer; padding: 4px 6px; border-radius: 4px; transition: background 0.12s, color 0.12s; }
+    .toolbar-btn:hover { background: rgba(0,0,0,0.06); color: var(--text); }
+    .round-wrap { margin-bottom: 16px; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .round-hdr { color: white; padding: 16px 20px; cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: space-between; transition: filter 0.12s; }
+    .round-hdr:hover { filter: brightness(1.08); }
+    .round-hdr-left { flex: 1; }
+    .round-num  { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.75; margin-bottom: 3px; }
+    .round-title { font-size: 16px; font-weight: 700; }
+    .round-sub  { font-size: 12px; opacity: 0.8; margin-top: 2px; }
+    .round-hdr-right { display: flex; align-items: center; gap: 8px; }
+    .round-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: rgba(255,255,255,0.25); white-space: nowrap; }
+    .skip-all-btn { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.9); background: rgba(255,255,255,0.15); border: 1.5px solid rgba(255,255,255,0.4); border-radius: 4px; padding: 3px 10px; cursor: pointer; white-space: nowrap; transition: background 0.12s; font-family: inherit; }
+    .skip-all-btn:hover { background: rgba(255,255,255,0.3); }
+    .sec-skip-all-btn { font-size: 11px; font-weight: 700; color: var(--skip-text); background: transparent; border: 1.5px solid var(--skip-border); border-radius: 4px; padding: 2px 8px; cursor: pointer; white-space: nowrap; transition: background 0.12s; font-family: inherit; }
+    .sec-skip-all-btn:hover { background: var(--skip-light); }
+    .round-chevron { width: 18px; height: 18px; opacity: 0.8; transition: transform 0.2s; flex-shrink: 0; }
+    .round-wrap.open .round-chevron { transform: rotate(180deg); }
+    .round-body { display: none; border: 2px solid transparent; border-top: none; border-radius: 0 0 10px 10px; overflow: hidden; }
+    .round-wrap.open .round-body { display: block; }
+    .round-wrap[data-round="sa"] .round-body { border-color: var(--c-sa); }
+    .round-wrap[data-round="si"] .round-body { border-color: var(--c-si); }
+    .round-wrap[data-round="vi"] .round-body { border-color: var(--c-vi); }
+    .round-body .card { border-radius: 0; box-shadow: none; margin-bottom: 0; border-bottom: 1px solid var(--border); }
+    .round-body .card:last-child { border-bottom: none; }
+    .section-header { padding: 12px 18px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; transition: background 0.12s; }
+    .section-header:hover { background: #f7f9fc; }
+    .section-left { display: flex; align-items: center; gap: 11px; }
+    .section-num { width: 26px; height: 26px; border-radius: 50%; color: white; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .round-wrap[data-round="sa"] .section-num { background: var(--c-sa); }
+    .round-wrap[data-round="si"] .section-num { background: var(--c-si); }
+    .round-wrap[data-round="vi"] .section-num { background: var(--c-vi); }
+    .section-title-text { font-size: 14px; font-weight: 600; }
+    .section-count { font-size: 12px; color: var(--muted); margin-left: 4px; }
+    .section-right { display: flex; align-items: center; gap: 6px; }
+    .badge { font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 10px; display: none; }
+    .badge.pass { background: var(--pass-light); color: var(--pass-dark); }
+    .badge.fail { background: var(--fail-light); color: var(--fail-dark); }
+    .badge.skip { background: var(--skip-light); color: var(--skip-dark); }
+    .sec-chevron { width: 15px; height: 15px; color: var(--muted); flex-shrink: 0; transition: transform 0.2s; }
+    .card.open .sec-chevron { transform: rotate(180deg); }
+    .section-body { border-top: 1px solid var(--border); display: none; }
+    .card.open .section-body { display: block; }
+    .section-note { padding: 8px 18px; background: #f5f7ff; border-bottom: 1px solid #d8e3f5; font-size: 12px; color: #3a4a7a; line-height: 1.55; }
+    .test-item { padding: 13px 18px; border-bottom: 1px solid var(--border); border-left: 3px solid transparent; transition: border-left-color 0.15s; }
+    .test-item:last-child { border-bottom: none; }
+    .test-item:hover { background: #fafbfc; }
+    .test-item.s-pass { border-left-color: var(--pass); }
+    .test-item.s-fail { border-left-color: var(--fail); }
+    .test-item.s-skip { border-left-color: var(--skip-border); }
+    .test-meta { display: flex; align-items: baseline; gap: 8px; margin-bottom: 5px; }
+    .test-id { font-size: 11px; font-weight: 700; white-space: nowrap; font-family: 'Cascadia Code', 'Consolas', monospace; }
+    .round-wrap[data-round="sa"] .test-id { color: var(--c-sa); }
+    .round-wrap[data-round="si"] .test-id { color: var(--c-si); }
+    .round-wrap[data-round="vi"] .test-id { color: var(--c-vi); }
+    .test-title { font-size: 13.5px; font-weight: 600; }
+    .test-steps { margin: 5px 0 5px 16px; }
+    .test-steps li { font-size: 12.5px; color: #444; margin-bottom: 2px; line-height: 1.5; }
+    .test-expected { margin: 7px 0 9px; padding: 6px 10px; background: #f0f5ff; border-left: 3px solid var(--c-sa); border-radius: 0 4px 4px 0; font-size: 12px; color: #2a3a6a; line-height: 1.5; }
+    .round-wrap[data-round="si"] .test-expected { background: #f0faf7; border-left-color: var(--c-si); color: #1a3a30; }
+    .round-wrap[data-round="vi"] .test-expected { background: #f5f0ff; border-left-color: var(--c-vi); color: #2a1a50; }
+    .test-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .status-btns { display: flex; gap: 4px; }
+    .status-btn { padding: 4px 13px; border-radius: 20px; border: 1.5px solid; font-size: 12px; font-weight: 600; cursor: pointer; background: white; transition: background 0.12s, color 0.12s; font-family: inherit; line-height: 1.4; }
+    .btn-pass { border-color: var(--pass); color: var(--pass); }
+    .btn-pass:hover, .btn-pass.active { background: var(--pass); color: white; }
+    .btn-fail { border-color: var(--fail); color: var(--fail); }
+    .btn-fail:hover, .btn-fail.active { background: var(--fail); color: white; }
+    .btn-skip { border-color: var(--skip-border); color: var(--skip-text); }
+    .btn-skip:hover, .btn-skip.active { background: var(--skip-border); color: var(--skip-text); }
+    .notes-field { flex: 1; min-width: 180px; max-width: 400px; padding: 5px 10px; border: 1.5px solid var(--border); border-radius: 6px; font-size: 12px; font-family: inherit; resize: none; height: 30px; overflow: hidden; transition: border-color 0.15s, height 0.15s; background: #fafbfc; }
+    .notes-field:focus { outline: none; border-color: var(--c-sa); height: 58px; overflow: auto; background: white; }
+    .evidence-section { display: none; margin-top: 10px; padding: 12px 14px; background: #fff7f7; border: 1px solid #f5c6c6; border-radius: 8px; }
+    .evidence-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #9a2a2a; margin-bottom: 6px; }
+    .error-notes-field { width: 100%; padding: 7px 10px; border: 1.5px solid #f0b0b0; border-radius: 6px; font-size: 12.5px; font-family: inherit; resize: vertical; min-height: 60px; background: white; color: var(--text); transition: border-color 0.15s; }
+    .error-notes-field:focus { outline: none; border-color: var(--fail); box-shadow: 0 0 0 3px rgba(220,53,69,0.12); }
+    .evidence-ss-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #9a2a2a; margin: 10px 0 6px; }
+    .screenshot-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .paste-zone { flex: 1; min-width: 160px; border: 2px dashed #f0b0b0; border-radius: 6px; padding: 7px 12px; cursor: pointer; font-size: 12px; color: #c09090; outline: none; transition: border-color 0.15s, background 0.15s, color 0.15s; text-align: center; }
+    .paste-zone:focus { border-color: var(--fail); background: #fff0f0; color: var(--fail); }
+    .paste-zone .pz-default { display: inline; }
+    .paste-zone .pz-focused { display: none; }
+    .paste-zone:focus .pz-default { display: none; }
+    .paste-zone:focus .pz-focused { display: inline; }
+    .or-label { font-size: 11px; color: var(--muted); }
+    .file-input-hidden { display: none; }
+    .file-upload-btn { font-size: 12px; font-weight: 600; padding: 5px 10px; border: 1.5px solid #f0b0b0; border-radius: 6px; cursor: pointer; background: white; color: #9a2a2a; transition: background 0.12s; white-space: nowrap; }
+    .file-upload-btn:hover { background: #fff0f0; }
+    .thumbnails { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .thumb-wrap { position: relative; display: inline-block; }
+    .thumb-img { width: 120px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #f0b0b0; cursor: pointer; display: block; }
+    .thumb-img:hover { opacity: 0.85; }
+    .thumb-delete { position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; border-radius: 50%; background: var(--fail); color: white; border: none; font-size: 11px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+    .submit-card { padding: 24px 22px; margin-top: 16px; text-align: center; }
+    .submit-card h2 { font-size: 18px; font-weight: 700; margin-bottom: 5px; }
+    .submit-card > p { color: var(--muted); font-size: 13px; margin-bottom: 18px; line-height: 1.6; }
+    .summary-row { display: flex; justify-content: center; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }
+    .summary-stat { text-align: center; }
+    .summary-num { font-size: 28px; font-weight: 800; line-height: 1; display: block; }
+    .c-total { color: #1a1a2e; } .c-pass { color: var(--pass); } .c-fail { color: var(--fail); } .c-skip { color: var(--skip-text); } .c-notrun { color: #adb5bd; }
+    .summary-lbl { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-top: 2px; }
+    .btn-save { padding: 11px 30px; background: #5F00C5; color: white; border: none; border-radius: 8px; font-size: 14.5px; font-weight: 600; cursor: pointer; transition: background 0.15s, transform 0.1s; font-family: inherit; }
+    .btn-save:hover { background: #4a009a; }
+    .btn-save:active { transform: scale(0.98); }
+    .save-hint { font-size: 11.5px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
+    code { background: #eef2f7; padding: 1px 5px; border-radius: 3px; font-family: 'Cascadia Code', 'Consolas', monospace; font-size: 12px; }
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
+    .modal-overlay.open { display: flex; }
+    .modal-box { background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); width: 100%; max-width: 760px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; }
+    .modal-header { padding: 18px 22px 14px; border-bottom: 1px solid var(--border); }
+    .modal-header h2 { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+    .modal-header p { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+    .modal-body { flex: 1; overflow: auto; padding: 16px 22px; }
+    .modal-prompt-ta { width: 100%; height: 400px; padding: 12px; border: 1.5px solid var(--border); border-radius: 8px; font-family: 'Cascadia Code', 'Consolas', monospace; font-size: 12px; line-height: 1.6; color: var(--text); resize: none; background: #fafbfc; }
+    .modal-footer { padding: 14px 22px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
+    .btn-copy { padding: 8px 20px; background: #5F00C5; color: white; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.12s; }
+    .btn-copy:hover { background: #4a009a; }
+    .btn-close { padding: 8px 20px; background: white; color: var(--text); border: 1.5px solid var(--border); border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.12s; }
+    .btn-close:hover { background: var(--bg); }
+    .lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 2000; align-items: center; justify-content: center; cursor: zoom-out; }
+    .lightbox.open { display: flex; }
+    .lightbox img { max-width: 95vw; max-height: 95vh; border-radius: 6px; box-shadow: 0 8px 40px rgba(0,0,0,0.6); }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-inner">
+    <div>
+      <h1>ADAM — Manual Test Plan <span class="version-badge">v0.9.0</span></h1>
+      <p>Three rounds: Store App → Standalone Installer → Version Independent</p>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-label" id="progressLabel">0 / 0 complete</div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+  </div>
+</header>
+
+<div class="main"><div id="app"></div></div>
+
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>Development Prompt</h2>
+      <p>Summarises failures from this test run. Copy and paste into Claude Code to start the next fix session.</p>
+    </div>
+    <div class="modal-body"><textarea class="modal-prompt-ta" id="modalPrompt" readonly></textarea></div>
+    <div class="modal-footer">
+      <button class="btn-copy" id="copyBtn" onclick="copyPrompt()">Copy to Clipboard</button>
+      <button class="btn-close" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <img id="lightboxImg" src="" alt="Screenshot" />
+</div>
+
+<script>
+// ── Data ─────────────────────────────────────────────────────────────────────
+
+const ENV_ITEMS = [
+  { id: 'storeApp',    label: 'PBI Desktop Store App (Microsoft Store version)' },
+  { id: 'standalone',  label: 'PBI Desktop Standalone installer version (if available)' },
+  { id: 'pbip',        label: 'test/pbip/Retail Sales.pbip — primary fixture (2 facts, 5 dims)' },
+  { id: 'sea',         label: 'test/pbip/Space Exploration Agency.pbip — large fixture (~25 tables, 6 facts)' },
+  { id: 'pbix',        label: 'test/pbix/Retail Sales.pbix' },
+  { id: 'thinReport',  label: 'A thin report .pbip (connects to Power BI Service)' },
+  { id: 'adamBuild',   label: 'ADAM debug build: src/ADAM/bin/Debug/net8.0-windows/ADAM.exe' },
+  { id: 'preRelBuild', label: 'ADAM pre-release build (untagged commit ahead of last tag, or -preview.x tagged)' },
+  { id: 'releaseBuild', label: 'ADAM release build (built from a v1.x.x or later tag — or simulate by temporarily tagging)' },
+  { id: 'logFile',     label: 'Log viewer open: Get-Content "$env:LOCALAPPDATA\\ADAM\\adam.log" -Wait -Tail 50' },
+  { id: 'settings',    label: 'Settings file accessible: %LOCALAPPDATA%\\ADAM\\settings.json' },
+];
+
+// ── Shared PBI-dependent sections (parameterised by SA/SI prefix and Open-Recent test) ──
+
+function buildPbiSections(prefix, openRecentTest) {
+  return [
+    {
+      id: `${prefix}-s1`, num: '1', title: 'Apply Window — Structure & Layout',
+      note: 'These tests verify the Apply window that opens when clicking Apply Layout. All require a connected PBI Desktop file.',
+      tests: [
+        { id: `${prefix}-1.1`, title: 'Apply window opens on clicking Apply',
+          steps: ['Open Retail Sales.pbip in PBI Desktop, connect ADAM.', 'Click Apply Waterfall Layout – Full Model.'],
+          expected: 'The Apply window opens. Main ADAM window remains open behind it.' },
+        { id: `${prefix}-1.2`, title: 'Layout summary not at top — shown per row instead',
+          steps: ['Inspect the Apply window header and each diagram row.'],
+          expected: 'Only "APPLY LAYOUT" title in the header. No "Waterfall — Full Model" subtitle at top. Each row shows style · mode in the LAYOUT column.' },
+        { id: `${prefix}-1.3`, title: 'Column headers visible with rename hint',
+          steps: ['Inspect the top of the diagram list.'],
+          expected: '"DIAGRAM NAME — click to rename" and "LAYOUT" headers appear above the list, separated by a thin divider.' },
+        { id: `${prefix}-1.4`, title: 'DIAGRAM NAME field is editable',
+          steps: ['Click into the name field of a diagram row.'],
+          expected: 'Cursor appears, field is editable, shows a subtle bottom border on focus.' },
+        { id: `${prefix}-1.5`, title: 'Apply Now button purple — dark mode',
+          steps: ['Ensure ADAM is in dark mode.', 'Compare Apply Now (Apply window) with Apply Layout (main window).'],
+          expected: 'Both buttons are brand purple (#5F00C5).' },
+        { id: `${prefix}-1.6`, title: 'Apply Now button purple — light mode',
+          steps: ['Switch to light mode.', 'Compare the same two buttons.'],
+          expected: 'Both buttons remain brand purple. Neither appears dark navy or any other colour.' },
+        { id: `${prefix}-1.7`, title: 'Apply Now disabled state is visually obvious',
+          steps: ['Open the Apply window and delete all rows using the trash icons.'],
+          expected: 'Apply Now becomes clearly muted/faded (~30% opacity). Queue button remains visually active.' },
+        { id: `${prefix}-1.8`, title: 'Cursor visible in rename field — dark mode',
+          steps: ['Switch to dark mode.', 'Open the Apply window and click into a DIAGRAM NAME field.'],
+          expected: 'Text cursor (caret) is clearly visible — light colour matching the text, not an invisible black bar.' },
+        { id: `${prefix}-1.9`, title: 'Cancel closes without applying',
+          steps: ['Open the Apply window and click Cancel.'],
+          expected: 'Window closes. No diagrams written. diagramLayout.json unchanged. Status bar shows "Cancelled."' },
+      ]
+    },
+    {
+      id: `${prefix}-s2`, num: '2', title: 'Apply Window — Conflict Resolution',
+      tests: [
+        { id: `${prefix}-2.1`, title: 'First apply — no conflict → [NEW] badge',
+          steps: ['Use a .pbip with no existing model view diagrams.', 'Click Apply.'],
+          expected: 'Each row shows a green [NEW] badge. No conflict controls visible.' },
+        { id: `${prefix}-2.2`, title: 'Exact name conflict → [OVERWRITE] / [ADD AS NEW] toggle',
+          steps: ['Apply Waterfall Full Model (creates "All Tables - Waterfall").', 'Click Apply again with the same style.'],
+          expected: '"All Tables - Waterfall" row shows [OVERWRITE] (orange, active) and [ADD AS NEW] (blue, outlined) pills.' },
+        { id: `${prefix}-2.3`, title: 'OVERWRITE keeps the same name',
+          steps: ['Ensure OVERWRITE selected (default). Click Apply Now.'],
+          expected: 'Existing diagram is overwritten. Name unchanged.' },
+        { id: `${prefix}-2.4`, title: 'ADD AS NEW generates a unique name',
+          steps: ['Click ADD AS NEW on the conflict row. Click Apply Now.'],
+          expected: 'Name field updates to "All Tables - Waterfall 2" (or similar). New diagram created alongside the original.' },
+        { id: `${prefix}-2.5`, title: 'Inactive pill looks pressable (outlined, not disabled)',
+          steps: ['Inspect the inactive pill (e.g. [ADD AS NEW] when [OVERWRITE] is active).'],
+          expected: 'Visible coloured border with matching text — looks like a pressable outlined button, not a greyed-out badge.' },
+        { id: `${prefix}-2.6`, title: 'All Tables variant conflict — OVERWRITE replaces different style',
+          steps: ['Apply Waterfall Full Model.', 'Switch to Star Schema Full Model and click Apply.', 'Select OVERWRITE. Click Apply Now.'],
+          expected: 'Apply window shows [OVERWRITE]/[ADD AS NEW] with hint "replaces existing \'All Tables - Waterfall\'". After apply, old diagram replaced in-place.' },
+        { id: `${prefix}-2.7`, title: 'Variant conflict — ADD AS NEW keeps both diagrams',
+          steps: ['Repeat 2.6 but select ADD AS NEW.'],
+          expected: 'Both "All Tables - Waterfall" and "All Tables - Star Schema" exist after apply.' },
+        { id: `${prefix}-2.8`, title: 'Batch resolve — Overwrite all',
+          steps: ['Apply Per-Fact Waterfall (creates 2 diagrams). Click Apply again with same style.', 'Click the Overwrite batch button.'],
+          expected: 'Both rows switch to OVERWRITE active simultaneously.' },
+        { id: `${prefix}-2.9`, title: 'Batch resolve — Add all as new',
+          steps: ['In same scenario, click Add as new batch button.'],
+          expected: 'Both rows switch to ADD AS NEW active, names show auto-incremented versions.' },
+        { id: `${prefix}-2.10`, title: 'Batch resolve hidden with only one conflict',
+          steps: ['Apply Full Model when exactly one conflict exists.'],
+          expected: '"Resolve all:" buttons are not visible.' },
+      ]
+    },
+    {
+      id: `${prefix}-s3`, num: '3', title: 'Apply Window — Naming & Removal',
+      tests: [
+        { id: `${prefix}-3.1`, title: 'Typing a custom name',
+          steps: ['Click the DIAGRAM NAME field and type "My Custom Diagram".', 'Click Apply Now.'],
+          expected: 'Diagram tab in Power BI Desktop is named "My Custom Diagram".' },
+        { id: `${prefix}-3.2`, title: 'Toggle does not overwrite custom name',
+          steps: ['Type a custom name into a conflict row.', 'Toggle between OVERWRITE and ADD AS NEW.'],
+          expected: 'Name field retains your custom text.' },
+        { id: `${prefix}-3.3`, title: 'Clearing custom name restores auto name on toggle',
+          steps: ['Type a custom name, then clear the field.', 'Toggle between OVERWRITE and ADD AS NEW.'],
+          expected: 'Name field updates to the auto-generated name on each toggle.' },
+        { id: `${prefix}-3.4`, title: 'Custom name preserved through queue',
+          steps: ['Type a custom name. Click + Queue another layout.', 'Change style/mode and click Apply again.'],
+          expected: 'The queued row shows the custom name you typed in the first session.' },
+        { id: `${prefix}-3.5`, title: 'Empty/whitespace name falls back to auto name',
+          steps: ['Clear the name field completely and click Apply Now.'],
+          expected: 'ADAM uses the auto-generated name. No error. No empty-string diagram tab.' },
+        { id: `${prefix}-3.6`, title: 'Trash icon removes a diagram row',
+          steps: ['Open the Apply window with at least two rows.', 'Click the trash icon on the far right of one row.'],
+          expected: 'That row disappears. Remaining rows unaffected.' },
+        { id: `${prefix}-3.7`, title: 'Apply Now disables when all rows removed',
+          steps: ['Open the Apply window with exactly one row. Click its trash icon.'],
+          expected: 'Apply Now becomes visibly disabled (faded). List is empty.' },
+        { id: `${prefix}-3.8`, title: 'Queue button stays enabled when list is empty',
+          steps: ['With empty Apply window (all rows removed), click + Queue another layout.'],
+          expected: 'Button remains clickable. Clicking it closes the window. Queue count on main Apply button reflects zero queued items.' },
+        { id: `${prefix}-3.9`, title: 'Typed name with no match disables OVERWRITE',
+          steps: ['In a conflict row (from 2.2), type a custom name that does not match any existing diagram (e.g. "Totally New Name").'],
+          expected: 'OVERWRITE pill greys out further (lower opacity, arrow cursor, tooltip explaining there\'s nothing to overwrite) and ADD AS NEW becomes active. Clicking OVERWRITE has no effect.' },
+        { id: `${prefix}-3.10`, title: 'Auto-generated names can still be toggled freely',
+          steps: ['In a conflict row (from 2.2), without typing anything, click ADD AS NEW, then click OVERWRITE again.'],
+          expected: 'Toggling works normally both ways — the auto-generated "add as new" name never disables OVERWRITE; the restriction in 3.9 only applies to hand-typed custom names.' },
+      ]
+    },
+    {
+      id: `${prefix}-s4`, num: '4', title: 'Apply Window — Queuing',
+      tests: [
+        { id: `${prefix}-4.1`, title: '+ Queue another layout button present',
+          steps: ['Open the Apply window.'],
+          expected: 'A "+ Queue another layout" button is visible at the bottom left.' },
+        { id: `${prefix}-4.2`, title: 'Clicking Queue stores diagrams and returns to main',
+          steps: ['Click + Queue another layout.'],
+          expected: 'Apply window closes. Main Apply button shows queued count (e.g. [1 queued]). Status bar shows queued confirmation.' },
+        { id: `${prefix}-4.3`, title: 'Second Apply shows queued items — no [QUEUED] badge',
+          steps: ['After queueing one layout, change style/mode and click Apply again.'],
+          expected: 'Queued diagrams appear at top of list with no special badge. They show style/mode in LAYOUT column.' },
+        { id: `${prefix}-4.4`, title: 'Queued conflict state persists',
+          steps: ['Queue a layout where you chose ADD AS NEW for a conflict.', 'Reopen the Apply window.'],
+          expected: 'The queued row still shows ADD AS NEW as active.' },
+        { id: `${prefix}-4.5`, title: 'User can change queued conflict resolution',
+          steps: ['In second Apply window, click OVERWRITE on previously-queued ADD AS NEW row.', 'Click Apply Now.'],
+          expected: 'Final diagram uses the overwrite name, not the unique name.' },
+        { id: `${prefix}-4.6`, title: 'Apply Now writes all queued + new diagrams',
+          steps: ['With 1 queued + 1 new layout, click Apply Now.'],
+          expected: 'Both diagrams written. PBI Desktop reopens with both visible.' },
+        { id: `${prefix}-4.7`, title: 'Queue cleared after successful Apply',
+          steps: ['After Apply Now completes, click Apply again.'],
+          expected: 'Apply window opens with only new diagrams — no residual queued items.' },
+        { id: `${prefix}-4.8`, title: 'Queue cleared on model switch',
+          steps: ['Queue at least one layout for model A. Open model B and click External Tools → ADAM.'],
+          expected: 'ADAM switches to model B. Queue count gone from Apply button. No queued items from model A.' },
+        { id: `${prefix}-4.9`, title: 'Apply window dismissed on model switch',
+          steps: ['With the Apply window open, click External Tools → ADAM from a second PBI file.'],
+          expected: 'Apply window closes automatically. ADAM switches to new model. No stale state.' },
+      ]
+    },
+    {
+      id: `${prefix}-s5`, num: '5', title: 'PBIP — Close / Reopen Option',
+      tests: [
+        { id: `${prefix}-5.1`, title: 'Blue info banner shown for .pbip',
+          steps: ['With Retail Sales.pbip connected, click Apply.'],
+          expected: 'Blue left-accented banner explains changes are written to disk but not visible until PBI is closed and reopened.' },
+        { id: `${prefix}-5.2`, title: 'Checkbox present and checked by default',
+          steps: ['On first use (no closeAfterApplyPbip setting), open the Apply window.'],
+          expected: '"Close and reopen Power BI Desktop now" checkbox is checked by default.' },
+        { id: `${prefix}-5.3`, title: 'No mandatory close warning shown for .pbip',
+          steps: ['Inspect the Apply window banners for a .pbip file.'],
+          expected: 'The blue "must be closed to write" banner (shown for .pbix) is NOT shown for .pbip.' },
+        { id: `${prefix}-5.4`, title: 'Checkbox checked — PBI closes and reopens',
+          steps: ['Ensure checkbox is checked. Click Apply Now.'],
+          expected: 'PBI Desktop closes, layout written, PBI reopens. Status: "Done! Power BI Desktop is reopening with the new ADAM diagram applied."' },
+        { id: `${prefix}-5.5`, title: 'Checkbox unchecked — PBI stays open, layout written',
+          steps: ['Uncheck the checkbox. Click Apply Now.'],
+          expected: 'PBI Desktop remains open. Status: "Done! Close and reopen Power BI Desktop to see the new diagram." Layout present in diagramLayout.json.' },
+        { id: `${prefix}-5.6`, title: 'TMDL annotations written in both paths',
+          steps: ['After 5.4 and after 5.5 (two runs), inspect Retail Sales.SemanticModel/definition/tables/*.tmdl.'],
+          expected: 'ADAM_Classification annotations present in both cases.' },
+        { id: `${prefix}-5.7`, title: 'Close/reopen preference saved and restored',
+          steps: ['Uncheck the checkbox and click Apply Now. Close ADAM, relaunch, click Apply again.'],
+          expected: 'Checkbox is unchecked (preference honoured).' },
+      ]
+    },
+    {
+      id: `${prefix}-s6`, num: '6', title: 'PBIX — Mandatory Close Messaging',
+      tests: [
+        { id: `${prefix}-6.1`, title: 'Two banners shown for .pbix (blue + orange)',
+          steps: ['Connect to Retail Sales.pbix and click Apply.'],
+          expected: 'Blue banner: "Power BI Desktop must be closed to write…". Orange banner: .pbix unsupported format warning with backup info.' },
+        { id: `${prefix}-6.2`, title: 'No checkbox for .pbix',
+          steps: ['Inspect the Apply window for a .pbix file.'],
+          expected: 'No "Close and reopen" checkbox visible.' },
+        { id: `${prefix}-6.3`, title: 'Close/reopen is automatic for .pbix',
+          steps: ['Click Apply Now on a .pbix file.'],
+          expected: 'PBI Desktop closes and reopens automatically. Backup created before write.' },
+        { id: `${prefix}-6.4`, title: 'Cancel prevents any changes',
+          steps: ['Click Apply, review warnings, click Cancel.'],
+          expected: 'PBI Desktop still open. No changes. No backup file created.' },
+      ]
+    },
+    {
+      id: `${prefix}-s7`, num: '7', title: 'File Detection',
+      tests: [
+        { id: `${prefix}-7.1`, title: '.pbip via External Tools ribbon',
+          steps: ['Open Retail Sales.pbip in PBI Desktop.', 'Click External Tools → ADAM.'],
+          expected: 'ADAM connects, file path shown in footer, no picker.' },
+        { id: `${prefix}-7.2`, title: '.pbix via double-click (command-line path)',
+          steps: ['Double-click Retail Sales.pbix to open it.', 'Click External Tools → ADAM.'],
+          expected: 'File path detected automatically via command-line args.' },
+        openRecentTest,
+        { id: `${prefix}-7.4`, title: 'New unsaved file',
+          steps: ['Open PBI Desktop, create a blank report (do not save).', 'Click External Tools → ADAM.'],
+          expected: 'Model loads, file path unknown, Apply prompts with clear message.' },
+        { id: `${prefix}-7.5`, title: 'Multiple files open — External Tools from each',
+          steps: ['Open Retail Sales.pbip and Space Exploration Agency.pbip simultaneously.', 'Click External Tools → ADAM from each.'],
+          expected: 'ADAM correctly switches between models. Log shows Pipe: received new args.' },
+        { id: `${prefix}-7.6`, title: 'Two files with the same name in different folders',
+          steps: ['Copy Retail Sales.pbix to two folders.', 'Open the one in the less-obvious folder via Open Recent.'],
+          expected: 'ADAM finds the correct file (verify by path shown in footer).' },
+        { id: `${prefix}-7.7`, title: 'File path cached after first successful detection (.pbip)',
+          steps: ['Open .pbip via Open Recent, connect ADAM, apply successfully.', 'Close PBI Desktop, reopen the file via Open Recent, launch ADAM.'],
+          expected: 'File path shown immediately from settings cache.' },
+        { id: `${prefix}-7.8`, title: 'File path cached after first successful detection (.pbix)',
+          steps: ['Repeat 7.7 with Retail Sales.pbix.'],
+          expected: 'Same — path retrieved from settings, no picker.' },
+      ]
+    },
+    {
+      id: `${prefix}-s8`, num: '8', title: 'Layout Generation',
+      note: 'For each test, verify in PBI Desktop Model View: no overlap · relationships connected · fact/dim positions correct · OutriggerBridge not overlapping parent.',
+      tests: [
+        { id: `${prefix}-8.1`,  title: 'Retail Sales .pbip — Waterfall Full Model',    steps: ['Apply Waterfall Full Model to Retail Sales.pbip.'],                  expected: '1 × "All Tables - Waterfall". No overlap, relationships visible.' },
+        { id: `${prefix}-8.2`,  title: 'Retail Sales .pbip — Waterfall Per Fact',      steps: ['Apply Waterfall Per Fact to Retail Sales.pbip.'],                   expected: '2 × fact-named diagrams. No overlap.' },
+        { id: `${prefix}-8.3`,  title: 'Retail Sales .pbip — Star Schema Full Model',  steps: ['Apply Star Schema Full Model to Retail Sales.pbip.'],                expected: '1 × "All Tables - Star Schema". Star arrangement.' },
+        { id: `${prefix}-8.4`,  title: 'Retail Sales .pbip — Star Schema Per Fact',    steps: ['Apply Star Schema Per Fact to Retail Sales.pbip.'],                  expected: '2 × fact-named diagrams. Star arrangement per fact.' },
+        { id: `${prefix}-8.5`,  title: 'Retail Sales .pbip — Inverted L Full Model',   steps: ['Apply Inverted L Full Model to Retail Sales.pbip.'],                 expected: '1 × "All Tables - Inverted L". L-shape arrangement.' },
+        { id: `${prefix}-8.6`,  title: 'Retail Sales .pbip — Inverted L Per Fact',     steps: ['Apply Inverted L Per Fact to Retail Sales.pbip.'],                  expected: '2 × fact-named diagrams. L-shape per fact.' },
+        { id: `${prefix}-8.7`,  title: 'Retail Sales .pbix — Waterfall Full Model',    steps: ['Apply Waterfall Full Model to Retail Sales.pbix.'],                  expected: 'Requires close/reopen. 1 × "All Tables - Waterfall". No overlap.' },
+        { id: `${prefix}-8.8`,  title: 'Retail Sales .pbix — Star Schema Per Fact',    steps: ['Apply Star Schema Per Fact to Retail Sales.pbix.'],                  expected: 'Requires close/reopen. 2 × fact-named diagrams.' },
+        { id: `${prefix}-8.9`,  title: 'Space Exploration Agency — Waterfall Full',    steps: ['Apply Waterfall Full Model to Space Exploration Agency.pbip.'],       expected: '1 × all ~25 tables. No overlap. Completes in under 10 seconds.' },
+        { id: `${prefix}-8.10`, title: 'Space Exploration Agency — Waterfall Per Fact', steps: ['Apply Waterfall Per Fact to Space Exploration Agency.pbip.'],        expected: '6 × fact-named diagrams. Each contains its own fact.' },
+        { id: `${prefix}-8.11`, title: 'Space Exploration Agency — Star Schema Full',  steps: ['Apply Star Schema Full Model to Space Exploration Agency.pbip.'],    expected: '1 × all tables radial. No overlap.' },
+        { id: `${prefix}-8.12`, title: 'Space Exploration Agency — Inverted L Per Fact', steps: ['Apply Inverted L Per Fact to Space Exploration Agency.pbip.'],    expected: '6 × fact-named diagrams. L-shape per fact.' },
+      ]
+    },
+    {
+      id: `${prefix}-s9`, num: '9', title: 'Table Classification',
+      note: 'CLI classification tests (--list-classifications, --set-classification) are in Round 3 — Version Independent.',
+      tests: [
+        { id: `${prefix}-9.1`, title: 'Auto-classification — Retail Sales',
+          steps: ['Connect ADAM to Retail Sales.pbip. Review table list before applying.'],
+          expected: 'Store Sales/Store Items = FACT, Calendar/Channel/Item/Store = DIM, Time Period = OUTRIGGER, @Measures = DISCONNECTED.' },
+        { id: `${prefix}-9.2`, title: 'Auto-classification — Space Exploration Agency',
+          steps: ['Connect ADAM to Space Exploration Agency.pbip.'],
+          expected: 'All 6 Fact tables = FACT, Dim tables = DIM, Bridge Mission Astronaut = BRIDGE, Outrigger tables = OUTRIGGER, _Measures/_Scenario Parameter = DISCONNECTED.' },
+        { id: `${prefix}-9.3`, title: 'Manual override persists across PBI restarts (.pbip)',
+          steps: ['Override one classification. Apply.', 'Close PBI Desktop completely and reopen. Relaunch ADAM.'],
+          expected: 'TMDL annotation survives close/reopen. Override shown on relaunch.' },
+        { id: `${prefix}-9.4`, title: 'Manual override persists across PBI restarts (.pbix)',
+          steps: ['Override one classification on Retail Sales.pbix. Apply.', 'Close and reopen. Relaunch ADAM.'],
+          expected: 'Override stored in settings. Survives PBI restart.' },
+        { id: `${prefix}-9.5`, title: 'Auto date/time system tables excluded',
+          steps: ['Open a model with Auto date/time enabled (creates DateTableTemplate_* and LocalDateTable_* tables).'],
+          expected: 'These system tables do not appear in ADAM\'s table list.' },
+      ]
+    },
+    {
+      id: `${prefix}-s10`, num: '10', title: 'PBIP Write Cycle',
+      tests: [
+        { id: `${prefix}-10.1`, title: 'Close/reopen checked — diagram visible immediately',
+          steps: ['Apply with checkbox checked.'],
+          expected: 'PBI reopens to the model. New diagram visible in Model View.' },
+        { id: `${prefix}-10.2`, title: 'No-close path — layout written but not yet visible',
+          steps: ['Apply with checkbox unchecked.', 'Inspect diagramLayout.json — confirm diagram JSON is present.', 'Do NOT close PBI.'],
+          expected: 'PBI Model View does not update. After manual close/reopen, diagram becomes visible.' },
+        { id: `${prefix}-10.3`, title: 'Multiple diagrams written in one session (queued)',
+          steps: ['Queue a Waterfall Full Model and a Per-Fact Inverted L.', 'Apply both in one Apply Now.'],
+          expected: 'Both diagram sets written in one close/reopen cycle.' },
+      ]
+    },
+    {
+      id: `${prefix}-s11`, num: '11', title: 'PBIX Write Cycle',
+      tests: [
+        { id: `${prefix}-11.1`, title: 'Backup created automatically',
+          steps: ['Apply to Retail Sales.pbix.', 'Check the folder.'],
+          expected: 'Timestamped backup exists in the same folder as the .pbix.' },
+        { id: `${prefix}-11.2`, title: 'PBI Desktop reopens automatically',
+          steps: ['Apply to Retail Sales.pbix.'],
+          expected: 'PBI closes, layout written, PBI reopens. No manual step required.' },
+        { id: `${prefix}-11.3`, title: 'User cancels PBI save dialog — ADAM recovers',
+          steps: ['Apply to .pbix with unsaved changes.', 'When PBI\'s save prompt appears, click Cancel.'],
+          expected: 'After ~10 seconds ADAM shows a clear message and re-enables the Apply button.' },
+        { id: `${prefix}-11.4`, title: 'Two .pbix files open — ADAM closes correct one',
+          steps: ['Open two different .pbix files.', 'Launch ADAM from the second one. Apply.'],
+          expected: 'Only the second instance closes. The first remains open.' },
+      ]
+    },
+    {
+      id: `${prefix}-s12`, num: '12', title: 'Single-Instance & Model Switching',
+      tests: [
+        { id: `${prefix}-12.1`, title: 'Second External Tools launch forwards to existing ADAM',
+          steps: ['With ADAM open on model A, click External Tools → ADAM from model B.'],
+          expected: 'No second window. Existing ADAM switches to model B. Log shows Pipe: received new args.' },
+        { id: `${prefix}-12.2`, title: 'Switching back',
+          steps: ['After 12.1, click External Tools → ADAM from model A again.'],
+          expected: 'ADAM switches back to model A correctly.' },
+        { id: `${prefix}-12.3`, title: 'Apply window dismissed and queue cleared on switch',
+          steps: ['Open the Apply window for model A.', 'Click External Tools → ADAM from model B.'],
+          expected: 'Apply window closes automatically. Queue count cleared from Apply button label.' },
+        { id: `${prefix}-12.4`, title: 'Queue cleared — new model gets clean apply',
+          steps: ['Queue one layout for model A.', 'Switch to model B via External Tools.', 'Click Apply for model B.'],
+          expected: 'Apply window shows only new items for model B — no residual queued items from model A.' },
+      ]
+    },
+    {
+      id: `${prefix}-s13`, num: '13', title: 'Edge Cases & Error Handling',
+      tests: [
+        { id: `${prefix}-13.1`, title: 'File deleted between detection and Apply',
+          steps: ['ADAM detects file path.', 'Delete or move the file. Click Apply.'],
+          expected: 'Helpful error message. No crash.' },
+        { id: `${prefix}-13.2`, title: 'Model with no relationships',
+          steps: ['Open a model with tables but no relationships defined.', 'Apply each layout style.'],
+          expected: 'Tables laid out without error in all styles.' },
+        { id: `${prefix}-13.3`, title: 'Large model — Space Exploration Agency — no overlap, <10s',
+          steps: ['Apply Waterfall Full Model to Space Exploration Agency.pbip.'],
+          expected: 'All ~25 tables placed without overlap. Completes in under 10 seconds.' },
+        { id: `${prefix}-13.4`, title: 'Thin report rejected gracefully',
+          steps: ['Open a thin report .pbip (Power BI Service-hosted).', 'Click External Tools → ADAM.'],
+          expected: 'Clear "Thin Reports Not Supported" message. No crash.' },
+      ]
+    },
+    {
+      id: `${prefix}-s14`, num: '14', title: 'Combined End-to-End Workflows',
+      tests: [
+        { id: `${prefix}-14.1`, title: 'E2E: .pbip — queue two layouts, custom names, no-close path',
+          steps: [
+            'Open Space Exploration Agency.pbip. Launch ADAM. Select Star Schema Full Model. Click Apply.',
+            'Rename "All Tables - Star Schema" to "Overview". Uncheck "Close and reopen". Click + Queue another layout.',
+            'Select Waterfall Per Fact Table. Click Apply again.',
+            'Verify: queued "Overview" shown, no badge. 6 new [NEW] rows. Click Apply Now.',
+            'Close and reopen PBI manually.',
+          ],
+          expected: 'Both layouts written without closing PBI. After manual close/reopen: "Overview" diagram and all 6 per-fact diagrams visible in Model View.' },
+        { id: `${prefix}-14.2`, title: 'E2E: .pbix — overwrite All Tables variant, mandatory close',
+          steps: [
+            'Open Retail Sales.pbix via double-click. Apply Waterfall Full Model.',
+            'Click Apply again with Inverted L Full Model.',
+            'Verify: blue mandatory-close banner, orange .pbix warning, no checkbox, variant conflict → OVERWRITE active.',
+            'Click Apply Now.',
+          ],
+          expected: 'PBI Desktop closes. Backup created. Layout written. PBI reopens. "All Tables - Waterfall" replaced with Inverted L layout.' },
+        { id: `${prefix}-14.3`, title: 'E2E: model switch mid-queue clears state',
+          steps: [
+            'Queue a layout for Retail Sales.pbip.',
+            'Open Space Exploration Agency.pbip and click External Tools → ADAM.',
+            'Click Apply for Space Exploration Agency.',
+          ],
+          expected: 'Queue cleared on switch. No residual Retail Sales diagrams queued. Space Exploration Agency apply proceeds cleanly.' },
+      ]
+    },
+  ];
+}
+
+// ── Rounds ───────────────────────────────────────────────────────────────────
+
+const ROUNDS = [
+  {
+    id: 'sa', num: 'Round 1 of 3', title: 'Store App', color: '#2272B4',
+    subtitle: 'Use PBI Desktop (Microsoft Store version) for every test in this round',
+    sections: buildPbiSections('SA', {
+      id: 'SA-7.3', title: '.pbix via Open Recent (Store App)',
+      steps: [
+        'Close and reopen Retail Sales.pbix using File → Open Recent in PBI Desktop Store App.',
+        'Click External Tools → ADAM.',
+      ],
+      expected: 'File path shown in footer. Log should show FindFileByWindowTitle — the Store App closes the .pbix file after loading into AS, so handle enumeration finds nothing; window title scan is used instead.',
+    }),
+  },
+  {
+    id: 'si', num: 'Round 2 of 3', title: 'Standalone Installer', color: '#117865',
+    subtitle: 'Use PBI Desktop (standalone installer version) for every test in this round',
+    sections: buildPbiSections('SI', {
+      id: 'SI-7.3', title: '.pbix via Open Recent (Standalone)',
+      steps: [
+        'Close and reopen Retail Sales.pbix using File → Open Recent in PBI Desktop standalone installer.',
+        'Click External Tools → ADAM.',
+      ],
+      expected: 'File path shown in footer. Log may show FindOpenFileByPid — the standalone installer keeps the .pbix file locked while open, so handle enumeration can succeed. Alternatively FindFileByWindowTitle may be used.',
+    }),
+  },
+  {
+    id: 'vi', num: 'Round 3 of 3', title: 'Version Independent', color: '#5F00C5',
+    subtitle: 'No PBI Desktop required for most tests — verifies build identity, CLI, and settings',
+    sections: [
+      {
+        id: 'vi-s1', num: '1', title: 'Version Pill & Release Channel',
+        tests: [
+          { id: 'VI-1.1', title: 'Pre-release build — yellow pill',
+            steps: ['Run a build where HEAD is ahead of the last git tag (MinVer generates x.y.z-alpha.0.N).', 'Launch ADAM.'],
+            expected: 'Yellow pill next to ADAM title showing full version string including suffix (e.g. v0.9.0-alpha.0.3).' },
+          { id: 'VI-1.2', title: 'Release build — pink pill',
+            steps: ['Build from a commit exactly on a vX.Y.Z tag with no pre-release suffix.', 'Launch ADAM.'],
+            expected: 'Pink pill (#F1497A) showing version (e.g. v0.9.0). No suffix.' },
+          { id: 'VI-1.3', title: 'Pill readable in both themes',
+            steps: ['Toggle between Dark and Light mode.'],
+            expected: 'Yellow and pink pills both clearly readable against window background in each theme.' },
+          { id: 'VI-1.4', title: 'About window version matches pill',
+            steps: ['Note the version shown in the main window pill.', 'Click About.'],
+            expected: 'Version in About window is identical to pill — same string, same suffix. No "- Public Preview" appended separately.' },
+        ]
+      },
+      {
+        id: 'vi-s2', num: '2', title: 'Update Banner — Channel Awareness',
+        tests: [
+          { id: 'VI-2.1', title: 'Pre-release build notified of newer pre-release — yellow banner',
+            steps: ['Run a pre-release build older than the newest published pre-release on GitHub.', 'Launch ADAM and wait ~10 seconds.'],
+            expected: 'Yellow banner appears. Text mentions the newer version. "Download now" button present.' },
+          { id: 'VI-2.2', title: 'Release build notified of newer release — pink banner',
+            steps: ['Run a release build older than the newest stable release.'],
+            expected: 'Pink banner appears with the newer version mentioned.' },
+          { id: 'VI-2.3', title: 'Release build NOT notified of pre-release-only updates',
+            steps: ['Run a release build. The only newer release on GitHub is marked as pre-release.'],
+            expected: 'No update banner appears.' },
+          { id: 'VI-2.4', title: 'Banner dismiss persists for the session',
+            steps: ['When banner appears, click the × dismiss button.'],
+            expected: 'Banner disappears and does not reappear if ADAM is left open.' },
+          { id: 'VI-2.5', title: '"Download now" opens release page',
+            steps: ['Click "Download now" in the banner.'],
+            expected: 'GitHub release page opens in default browser. ADAM closes.' },
+          { id: 'VI-2.6', title: 'Both banners readable in both themes',
+            steps: ['With each banner visible, toggle Dark and Light mode.'],
+            expected: 'Yellow banner (dark text) and pink banner (white text) both remain clearly legible.' },
+        ]
+      },
+      {
+        id: 'vi-s3', num: '3', title: 'CLI Mode',
+        tests: [
+          { id: 'VI-3.1', title: 'Basic CLI apply',
+            steps: ['Run: ADAM.exe --cli --file "test/pbip/Retail Sales.pbip"'],
+            expected: 'Layout written, exit 0, success output to stdout.' },
+          { id: 'VI-3.2', title: 'All style flags',
+            steps: ['Run with --style waterfall', 'Run with --style star-schema', 'Run with --style inverted-l'],
+            expected: 'Correct layout for each. Exit 0.' },
+          { id: 'VI-3.3', title: 'Per-fact mode produces one diagram per fact',
+            steps: ['Run: ADAM.exe --cli --file "test/pbip/Retail Sales.pbip" --mode per-fact'],
+            expected: 'Two diagrams created (Store Sales and Store Items).' },
+          { id: 'VI-3.4', title: 'Large model per-fact mode',
+            steps: ['Run: ADAM.exe --cli --file "test/pbip/Space Exploration Agency.pbip" --mode per-fact'],
+            expected: 'Six diagrams created (one per fact). Exit 0.' },
+          { id: 'VI-3.5', title: 'Overwrite flag',
+            steps: ['Run twice: ADAM.exe --cli --file "..." --mode full --overwrite'],
+            expected: 'Still only one diagram after two runs. No conflict error.' },
+          { id: 'VI-3.6', title: 'File not found — clear error',
+            steps: ['Run: ADAM.exe --cli --file "does-not-exist.pbip"'],
+            expected: 'Clear error to stderr, exit code 1.' },
+          { id: 'VI-3.7', title: '.pbix rejected in CLI mode',
+            steps: ['Run: ADAM.exe --cli --file "test/pbix/Retail Sales.pbix"'],
+            expected: '"CLI mode only supports .pbip files." error, exit 1.' },
+          { id: 'VI-3.8', title: 'CLI — list classifications',
+            steps: ['Run: ADAM.exe --cli --file "test/pbip/Retail Sales.pbip" --list-classifications'],
+            expected: 'Table names and classifications printed to stdout. Exit code 0.' },
+          { id: 'VI-3.9', title: 'CLI — set classification',
+            steps: ['Run: ADAM.exe --cli --file "test/pbip/Retail Sales.pbip" --set-classification "Calendar=Fact"', 'Open the file in PBI Desktop and launch ADAM.'],
+            expected: 'Calendar shows as FACT (stored override).' },
+        ]
+      },
+      {
+        id: 'vi-s4', num: '4', title: 'Settings Persistence',
+        tests: [
+          { id: 'VI-4.1', title: 'Theme persists across restarts',
+            steps: ['Switch to Dark mode. Close ADAM. Relaunch.'],
+            expected: 'Dark mode is still active.' },
+          { id: 'VI-4.2', title: 'Layout style selection persists',
+            steps: ['Select Star Schema. Close ADAM. Relaunch.'],
+            expected: 'Star Schema is still selected.' },
+          { id: 'VI-4.3', title: 'Close/reopen preference persists (.pbip)',
+            steps: ['Uncheck "Close and reopen PBI Desktop now". Apply.', 'Close ADAM. Relaunch. Click Apply.'],
+            expected: 'Checkbox is still unchecked.' },
+          { id: 'VI-4.4', title: 'Settings survive a version upgrade',
+            steps: ['Note current settings.', 'Install/replace with a newer build.'],
+            expected: 'Saved classifications, file paths, theme, and close/reopen preference all preserved.' },
+          { id: 'VI-4.5', title: 'ADAM launched standalone — no PBI open',
+            steps: ['Launch ADAM.exe directly with no arguments.'],
+            expected: 'Manual connect UI shown. No crash.' },
+        ]
+      },
+    ]
+  },
+];
+
+// ── State ─────────────────────────────────────────────────────────────────────
+
+const state = { env: {}, results: {}, screenshots: {} };
+ROUNDS.forEach(r => r.sections.forEach(s => s.tests.forEach(t => {
+  state.results[t.id]     = { status: null, notes: '', errorNotes: '' };
+  state.screenshots[t.id] = [];
+})));
+
+const TOTAL = ROUNDS.reduce((n, r) => n + r.sections.reduce((m, s) => m + s.tests.length, 0), 0);
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function esc(str) {
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function safeId(id) { return id.replace(/[^a-zA-Z0-9]/g, '_'); }
+
+// ── Build HTML ─────────────────────────────────────────────────────────────
+
+function buildHTML() {
+  const parts = [];
+
+  parts.push(`
+    <div class="card session-card">
+      <div class="section-label">Test Session</div>
+      <div class="session-grid">
+        <div><label class="field-label" for="inp-tester">Tester</label><input type="text" id="inp-tester" placeholder="Your name" autocomplete="name" /></div>
+        <div><label class="field-label" for="inp-build">Build / Version</label><input type="text" id="inp-build" placeholder="e.g. v0.9.0-alpha.0.3" autocomplete="off" /></div>
+        <div class="field-full"><label class="field-label" for="inp-notes">Session Notes</label><textarea id="inp-notes" rows="2" placeholder="Any general notes about this test run…"></textarea></div>
+      </div>
+    </div>`);
+
+  parts.push(`
+    <div class="card env-card">
+      <div class="section-label">Environment Setup Checklist</div>
+      <ul class="env-list">
+        ${ENV_ITEMS.map(e => `
+          <li class="env-item">
+            <input type="checkbox" id="env-${e.id}" onchange="state.env['${e.id}']=this.checked" />
+            <label class="env-item-label" for="env-${e.id}">${esc(e.label)}</label>
+          </li>`).join('')}
+      </ul>
+    </div>`);
+
+  parts.push(`
+    <div class="toolbar">
+      <button class="toolbar-btn" onclick="expandAll()">Expand All</button>
+      <button class="toolbar-btn" onclick="collapseAll()">Collapse All</button>
+    </div>`);
+
+  ROUNDS.forEach(round => {
+    const sectionsHTML = round.sections.map(section => {
+      const testsHTML = section.tests.map(t => {
+        const sid = safeId(t.id);
+        return `
+          <div class="test-item" id="ti-${sid}">
+            <div class="test-meta">
+              <span class="test-id">${esc(t.id)}</span>
+              <span class="test-title">${esc(t.title)}</span>
+            </div>
+            <ol class="test-steps">${t.steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol>
+            <div class="test-expected"><strong>Expected:</strong> ${esc(t.expected)}</div>
+            <div class="test-controls">
+              <div class="status-btns">
+                <button class="status-btn btn-pass" data-id="${esc(t.id)}" data-val="pass" onclick="setStatus(this)">Pass</button>
+                <button class="status-btn btn-fail" data-id="${esc(t.id)}" data-val="fail" onclick="setStatus(this)">Fail</button>
+                <button class="status-btn btn-skip" data-id="${esc(t.id)}" data-val="skip" onclick="setStatus(this)">Skip</button>
+              </div>
+              <textarea class="notes-field" placeholder="Notes…"
+                oninput="state.results['${esc(t.id)}'].notes=this.value"
+                onfocus="this.style.height='58px'"
+                onblur="if(!this.value.trim())this.style.height='30px'"></textarea>
+            </div>
+            <div class="evidence-section" id="ev-${sid}">
+              <div class="evidence-label">Failure Details</div>
+              <textarea class="error-notes-field" id="en-${sid}"
+                placeholder="Describe the failure, paste error messages, or note what differed from expected…"
+                rows="3"
+                oninput="state.results['${esc(t.id)}'].errorNotes=this.value"></textarea>
+              <div class="evidence-ss-label">Screenshots</div>
+              <div class="screenshot-controls">
+                <div class="paste-zone" tabindex="0" onpaste="captureImagePaste(event,'${esc(t.id)}')" onclick="this.focus()">
+                  <span class="pz-default">Click here, then Ctrl+V to paste a screenshot</span>
+                  <span class="pz-focused">Ready — press Ctrl+V to paste</span>
+                </div>
+                <span class="or-label">or</span>
+                <label for="fu-${sid}" class="file-upload-btn">Upload image</label>
+                <input type="file" id="fu-${sid}" class="file-input-hidden" accept="image/*" multiple
+                  onchange="addScreenshotsFromFiles(this.files,'${esc(t.id)}')" />
+              </div>
+              <div class="thumbnails" id="thumbs-${sid}"></div>
+            </div>
+          </div>`;
+      }).join('');
+
+      return `
+        <div class="card" id="sec-${section.id}">
+          <div class="section-header" onclick="toggleSection('sec-${section.id}')">
+            <div class="section-left">
+              <div class="section-num">${esc(section.num)}</div>
+              <div class="section-title-text">${esc(section.title)}</div>
+              <span class="section-count">(${section.tests.length})</span>
+            </div>
+            <div class="section-right">
+              <button class="sec-skip-all-btn" onclick="event.stopPropagation();skipAllSection('${section.id}')">Skip All</button>
+              <span class="badge pass" id="bp-${section.id}"></span>
+              <span class="badge fail" id="bf-${section.id}"></span>
+              <span class="badge skip" id="bs-${section.id}"></span>
+              <svg class="sec-chevron" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+              </svg>
+            </div>
+          </div>
+          <div class="section-body">
+            ${section.note ? `<div class="section-note">${esc(section.note)}</div>` : ''}
+            ${testsHTML}
+          </div>
+        </div>`;
+    }).join('');
+
+    const roundTestCount = round.sections.reduce((n, s) => n + s.tests.length, 0);
+
+    parts.push(`
+      <div class="round-wrap" id="roundwrap-${round.id}" data-round="${round.id}">
+        <div class="round-hdr" style="background:${round.color}" onclick="toggleRound('${round.id}')">
+          <div class="round-hdr-left">
+            <div class="round-num">${esc(round.num)}</div>
+            <div class="round-title">${esc(round.title)}</div>
+            <div class="round-sub">${esc(round.subtitle)}</div>
+          </div>
+          <div class="round-hdr-right">
+            <button class="skip-all-btn" onclick="event.stopPropagation();skipAllRound('${round.id}')">Skip All</button>
+            <span class="round-badge" id="rb-${round.id}">0 / ${roundTestCount}</span>
+            <svg class="round-chevron" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+            </svg>
+          </div>
+        </div>
+        <div class="round-body">
+          ${sectionsHTML}
+        </div>
+      </div>`);
+  });
+
+  parts.push(`
+    <div class="card submit-card">
+      <h2>Save Test Results</h2>
+      <p>In Chrome or Edge, choose the <code>testing/</code> folder the first time — it will be remembered for future sessions.<br>
+         A timestamped subfolder is created automatically. Screenshots are saved alongside the results. A development prompt is generated after saving.</p>
+      <div class="summary-row">
+        <div class="summary-stat"><span class="summary-num c-total" id="sum-total">${TOTAL}</span><div class="summary-lbl">Total</div></div>
+        <div class="summary-stat"><span class="summary-num c-pass"  id="sum-pass">0</span><div class="summary-lbl">Pass</div></div>
+        <div class="summary-stat"><span class="summary-num c-fail"  id="sum-fail">0</span><div class="summary-lbl">Fail</div></div>
+        <div class="summary-stat"><span class="summary-num c-skip"  id="sum-skip">0</span><div class="summary-lbl">Skip</div></div>
+        <div class="summary-stat"><span class="summary-num c-notrun" id="sum-notrun">${TOTAL}</span><div class="summary-lbl">Not Run</div></div>
+      </div>
+      <button class="btn-save" onclick="saveResults()">Save Results &amp; Generate Prompt</button>
+      <div class="save-hint">Other browsers: a JSON file downloads — move it to testing/ manually. The prompt is shown either way.</div>
+    </div>`);
+
+  return parts.join('');
+}
+
+// ── Screenshots ───────────────────────────────────────────────────────────────
+
+function captureImagePaste(event, testId) {
+  const imgItem = Array.from(event.clipboardData.items||[]).find(i => i.type.startsWith('image/'));
+  if (!imgItem) return;
+  event.preventDefault();
+  const blob = imgItem.getAsFile();
+  if (!blob) return;
+  const reader = new FileReader();
+  reader.onload = ev => addScreenshotToState(ev.target.result, blob.type, testId);
+  reader.readAsDataURL(blob);
+}
+function addScreenshotsFromFiles(files, testId) {
+  Array.from(files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = ev => addScreenshotToState(ev.target.result, file.type, testId);
+    reader.readAsDataURL(file);
+  });
+}
+function addScreenshotToState(dataUrl, mimeType, testId) {
+  state.screenshots[testId].push({ dataUrl, mimeType });
+  renderThumbnails(testId);
+}
+function removeScreenshot(testId, idx) {
+  state.screenshots[testId].splice(idx, 1);
+  renderThumbnails(testId);
+}
+function renderThumbnails(testId) {
+  const c = document.getElementById('thumbs-' + safeId(testId));
+  if (!c) return;
+  c.innerHTML = state.screenshots[testId].map((s, i) => `
+    <div class="thumb-wrap">
+      <img class="thumb-img" src="${s.dataUrl}" alt="Screenshot ${i+1}" onclick="openLightbox('${esc(testId)}',${i})" />
+      <button class="thumb-delete" onclick="removeScreenshot('${esc(testId)}',${i})" title="Remove">×</button>
+    </div>`).join('');
+}
+function openLightbox(testId, idx) {
+  document.getElementById('lightboxImg').src = state.screenshots[testId][idx].dataUrl;
+  document.getElementById('lightbox').classList.add('open');
+}
+function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); }
+
+// ── Interactions ──────────────────────────────────────────────────────────────
+
+function toggleRound(id)   { document.getElementById('roundwrap-' + id).classList.toggle('open'); }
+function toggleSection(id) { document.getElementById(id).classList.toggle('open'); }
+function expandAll() {
+  ROUNDS.forEach(r => {
+    document.getElementById('roundwrap-' + r.id).classList.add('open');
+    r.sections.forEach(s => document.getElementById('sec-' + s.id).classList.add('open'));
+  });
+}
+function collapseAll() {
+  ROUNDS.forEach(r => {
+    document.getElementById('roundwrap-' + r.id).classList.remove('open');
+    r.sections.forEach(s => document.getElementById('sec-' + s.id).classList.remove('open'));
+  });
+}
+function applySkipToTests(tests) {
+  tests.forEach(t => {
+    state.results[t.id].status = 'skip';
+    const item = document.getElementById('ti-' + safeId(t.id));
+    if (!item) return;
+    item.querySelectorAll('.status-btn').forEach(b => b.classList.toggle('active', b.dataset.val === 'skip'));
+    item.className = 'test-item s-skip';
+    const ev = document.getElementById('ev-' + safeId(t.id));
+    if (ev) ev.style.display = 'none';
+  });
+  updateProgress();
+  updateBadges();
+}
+function skipAllRound(roundId) {
+  const round = ROUNDS.find(r => r.id === roundId);
+  if (round) applySkipToTests(round.sections.flatMap(s => s.tests));
+}
+function skipAllSection(sectionId) {
+  for (const round of ROUNDS) {
+    const section = round.sections.find(s => s.id === sectionId);
+    if (section) { applySkipToTests(section.tests); break; }
+  }
+}
+function setStatus(btn) {
+  const id  = btn.dataset.id;
+  const val = btn.dataset.val;
+  state.results[id].status = state.results[id].status === val ? null : val;
+  const ns = state.results[id].status;
+  const item = document.getElementById('ti-' + safeId(id));
+  item.querySelectorAll('.status-btn').forEach(b => b.classList.toggle('active', b.dataset.val === ns));
+  item.className = 'test-item' + (ns ? ' s-' + ns : '');
+  const ev = document.getElementById('ev-' + safeId(id));
+  if (ev) ev.style.display = ns === 'fail' ? 'block' : 'none';
+  updateProgress();
+  updateBadges();
+}
+
+// ── Progress ──────────────────────────────────────────────────────────────────
+
+function getCounts() {
+  const c = { pass: 0, fail: 0, skip: 0, notRun: 0 };
+  Object.values(state.results).forEach(r => { if (r.status) c[r.status]++; else c.notRun++; });
+  return c;
+}
+function updateProgress() {
+  const c = getCounts();
+  const done = c.pass + c.fail + c.skip;
+  document.getElementById('progressLabel').textContent = `${done} / ${TOTAL} complete`;
+  document.getElementById('progressFill').style.width  = `${(done/TOTAL)*100}%`;
+  document.getElementById('sum-pass').textContent   = c.pass;
+  document.getElementById('sum-fail').textContent   = c.fail;
+  document.getElementById('sum-skip').textContent   = c.skip;
+  document.getElementById('sum-notrun').textContent = c.notRun;
+}
+function updateBadges() {
+  ROUNDS.forEach(round => {
+    let roundDone = 0, roundTotal = 0;
+    round.sections.forEach(section => {
+      const sc = { pass: 0, fail: 0, skip: 0 };
+      section.tests.forEach(t => { const s = state.results[t.id].status; if (s) { sc[s]++; roundDone++; } roundTotal++; });
+      const show = (el, n) => { if (!el) return; el.textContent = n; el.style.display = n > 0 ? 'inline-block' : 'none'; };
+      show(document.getElementById('bp-'+section.id), sc.pass);
+      show(document.getElementById('bf-'+section.id), sc.fail);
+      show(document.getElementById('bs-'+section.id), sc.skip);
+    });
+    const rb = document.getElementById('rb-'+round.id);
+    if (rb) rb.textContent = `${roundDone} / ${roundTotal}`;
+  });
+}
+
+// ── Prompt generation ─────────────────────────────────────────────────────────
+
+function generatePrompt(payload, folderName) {
+  const failures = Object.entries(payload.results).filter(([,v]) => v.status === 'fail');
+
+  if (!failures.length) {
+    return `# ADAM v0.9.0 Test Run — All Tests Passed\n\n**Tester:** ${payload.metadata.tester}  \n**Build:** ${payload.metadata.build}  \n**Date:** ${payload.metadata.timestamp.slice(0,10)}  \n\nAll ${payload.summary.total} tests passed (${payload.summary.skip} skipped). No failures to fix.\n`;
+  }
+
+  let md = `You are working on ADAM (Automated Diagram Arrangement for Models) v0.9.0 — a Power BI external tool built in C#/.NET 8 WPF. Read CLAUDE.md in the repo root for full architecture context before starting.\n\n`;
+  md += `## Test Run Summary\n- **Tester:** ${payload.metadata.tester}\n- **Build:** ${payload.metadata.build}\n- **Date:** ${payload.metadata.timestamp.slice(0,10)}\n- **Results:** ${payload.summary.pass} passed · ${payload.summary.fail} failed · ${payload.summary.skip} skipped · ${payload.summary.notRun} not run\n`;
+  if (payload.metadata.sessionNotes) md += `- **Session notes:** ${payload.metadata.sessionNotes}\n`;
+
+  md += `\n---\n\n## Failed Tests — Please Investigate and Fix\n`;
+
+  for (const [id, result] of failures) {
+    let testDef = null;
+    for (const round of ROUNDS) {
+      for (const section of round.sections) {
+        const found = section.tests.find(t => t.id === id);
+        if (found) { testDef = found; break; }
+      }
+      if (testDef) break;
+    }
+    md += `\n### [${id}] ${result.title}\n**Section:** ${result.section}\n\n`;
+    if (testDef) {
+      md += `**Steps to reproduce:**\n`;
+      testDef.steps.forEach((s, i) => { md += `${i+1}. ${s}\n`; });
+      md += `\n**Expected behaviour:**\n${testDef.expected}\n\n`;
+    }
+    const errorDesc = result.errorNotes || result.notes;
+    md += `**Actual behaviour / error:**\n${errorDesc || '*(No details provided — reproduce and investigate)*'}\n`;
+    const ss = state.screenshots[id] || [];
+    if (ss.length && folderName) md += `\n**Evidence:** \`testing/${folderName}/screenshots/${id.replace(/[^a-zA-Z0-9]/g,'-')}-*.png\`\n`;
+    md += '\n---\n';
+  }
+
+  md += `\n## Instructions\n\nFor each failed test above:\n1. Diagnose the root cause in the codebase.\n2. Implement a fix.\n3. Explain what you changed and why.\n4. Identify which other test scenarios should be re-run to verify the fix and check for regressions.\n`;
+  return md;
+}
+
+// ── Modal ─────────────────────────────────────────────────────────────────────
+
+function showPromptModal(text) {
+  document.getElementById('modalPrompt').value = text;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+function copyPrompt() {
+  navigator.clipboard.writeText(document.getElementById('modalPrompt').value).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = 'Copy to Clipboard'; }, 2000);
+  });
+}
+
+// ── Save ──────────────────────────────────────────────────────────────────────
+
+const IDB_NAME  = 'adam-test-plan-090';
+const IDB_STORE = 'handles';
+const DIR_KEY   = 'testingDir';
+
+function idbOpen() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open(IDB_NAME, 1);
+    r.onupgradeneeded = e => e.target.result.createObjectStore(IDB_STORE);
+    r.onsuccess = e => res(e.target.result);
+    r.onerror   = () => rej(r.error);
+  });
+}
+async function getSavedDir() {
+  try {
+    const db  = await idbOpen();
+    const req = db.transaction(IDB_STORE, 'readonly').objectStore(IDB_STORE).get(DIR_KEY);
+    return await new Promise(res => { req.onsuccess = () => res(req.result ?? null); req.onerror = () => res(null); });
+  } catch { return null; }
+}
+async function saveDirHandle(handle) {
+  try {
+    const db = await idbOpen();
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).put(handle, DIR_KEY);
+    await new Promise((res, rej) => { tx.oncomplete = res; tx.onerror = () => rej(tx.error); });
+  } catch { /* non-fatal */ }
+}
+function dataURLtoBlob(dataUrl) {
+  const [header, data] = dataUrl.split(',');
+  const mime = header.match(/:(.*?);/)[1];
+  const bin  = atob(data);
+  const arr  = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return new Blob([arr], { type: mime });
+}
+
+async function saveResults() {
+  const tester = document.getElementById('inp-tester').value.trim();
+  const build  = document.getElementById('inp-build').value.trim();
+  const notes  = document.getElementById('inp-notes').value.trim();
+  const c      = getCounts();
+
+  const resultsMap = {};
+  ROUNDS.forEach(round => round.sections.forEach(section => section.tests.forEach(t => {
+    resultsMap[t.id] = {
+      round: round.title, section: section.title, title: t.title,
+      status: state.results[t.id].status, notes: state.results[t.id].notes,
+      errorNotes: state.results[t.id].errorNotes,
+    };
+  })));
+
+  const envMap = {};
+  ENV_ITEMS.forEach(e => { envMap[e.id] = !!state.env[e.id]; });
+
+  const ts         = new Date().toISOString().slice(0,19).replace(/:/g,'-');
+  const folderName = `adam-v090-test-results-${ts}`;
+
+  const payload = {
+    metadata: { timestamp: new Date().toISOString(), tester: tester||'(not specified)', build: build||'(not specified)', sessionNotes: notes, planVersion: '0.9.0' },
+    environment: envMap,
+    summary: { total: TOTAL, pass: c.pass, fail: c.fail, skip: c.skip, notRun: c.notRun },
+    results: resultsMap,
+  };
+
+  const promptText = generatePrompt(payload, folderName);
+
+  if (window.showDirectoryPicker) {
+    try {
+      const savedDir   = await getSavedDir();
+      const pickerOpts = { mode: 'readwrite', id: 'adam-testing-090' };
+      if (savedDir) pickerOpts.startIn = savedDir;
+      const baseDir = await window.showDirectoryPicker(pickerOpts);
+      await saveDirHandle(baseDir);
+      const runDir  = await baseDir.getDirectoryHandle(folderName, { create: true });
+      const jh = await runDir.getFileHandle('results.json', { create: true });
+      const jw = await jh.createWritable();
+      await jw.write(JSON.stringify(payload, null, 2));
+      await jw.close();
+      const hasScreenshots = Object.values(state.screenshots).some(arr => arr.length > 0);
+      if (hasScreenshots) {
+        const ssDir = await runDir.getDirectoryHandle('screenshots', { create: true });
+        for (const [testId, screenshots] of Object.entries(state.screenshots)) {
+          for (let i = 0; i < screenshots.length; i++) {
+            const s   = screenshots[i];
+            const ext = s.mimeType === 'image/jpeg' ? 'jpg' : 'png';
+            const fh  = await ssDir.getFileHandle(`${testId.replace(/[^a-zA-Z0-9]/g,'-')}-${i+1}.${ext}`, { create: true });
+            const fw  = await fh.createWritable();
+            await fw.write(dataURLtoBlob(s.dataUrl));
+            await fw.close();
+          }
+        }
+      }
+      showPromptModal(promptText);
+      return;
+    } catch (e) {
+      if (e.name === 'AbortError') return;
+    }
+  }
+
+  // Fallback download
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  Object.assign(document.createElement('a'), { href: url, download: `${folderName}.json` }).click();
+  URL.revokeObjectURL(url);
+  showPromptModal(promptText);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+
+document.getElementById('app').innerHTML = buildHTML();
+document.getElementById('progressLabel').textContent = `0 / ${TOTAL} complete`;
+document.getElementById('sum-total').textContent   = TOTAL;
+document.getElementById('sum-notrun').textContent  = TOTAL;
+</script>
+</body>
+</html>

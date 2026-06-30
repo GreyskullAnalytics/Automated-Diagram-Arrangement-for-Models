@@ -6,6 +6,95 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.9.0] — 2026-06
+
+### Added
+- A version pill now appears next to the ADAM title showing which build you are
+  running. The pill is pink for release builds and yellow for pre-release builds,
+  so you can see your release channel at a glance without opening the About window.
+- The update notification banner is now channel-aware. If you are on a release
+  build, ADAM only alerts you to new release builds (shown with a pink banner).
+  If you are on a pre-release build, ADAM alerts you to new pre-release versions
+  too (shown with a yellow banner). Release-channel users will no longer be prompted to
+  install pre-release versions.
+- Clicking Apply now opens a dedicated **Apply Layout** window before anything is
+  written to your file. All decisions — resolving naming conflicts, renaming
+  diagram tabs, queuing additional layouts, and choosing whether to close Power BI
+  Desktop — are shown together on one screen. A single **Apply Now** button
+  executes everything.
+- Diagram names can now be customised directly in the Apply window before
+  committing. Click the name field on any row to rename the diagram tab that will
+  appear in Power BI Desktop.
+- Naming conflicts are now resolved inline in the Apply window. Each conflicting
+  diagram shows an **OVERWRITE** and **ADD AS NEW** toggle so you can see exactly
+  what will happen before clicking Apply Now. When more than one conflict exists,
+  a "Resolve all" shortcut lets you set all of them at once.
+- When applying a Full Model layout and an existing "All Tables" diagram with a
+  different style is already in the file (for example "All Tables - Waterfall"
+  when you are about to apply Star Schema), the Apply window now offers to replace
+  it in-place rather than silently adding a second diagram alongside it. A hint
+  line beneath the diagram name explains which existing diagram will be replaced.
+- Queued layouts now persist their conflict resolution choices across Apply window
+  sessions. If you queued a layout and chose ADD AS NEW for a naming conflict, that
+  choice is still shown and can be changed when you return to add a second layout.
+- When applying to a **.pbip** file, the Apply window now explains that the layout
+  is written to your project files on disk but will only appear in Power BI Desktop
+  after the file is closed and reopened. A checkbox lets you choose whether ADAM
+  should close and reopen Power BI Desktop immediately or leave it open so you can
+  do so manually at a convenient time. Your preference is remembered for next time.
+- The column headers **DIAGRAM NAME** and **LAYOUT** are now shown above the
+  diagram list in the Apply window. The DIAGRAM NAME header includes a "— click to
+  rename" hint so it is clear that diagram names are editable.
+- Each row in the Apply window now has a trash icon on the far right. Clicking it
+  removes that diagram from the list before anything is applied. If you remove
+  everything, Apply Now disables automatically so you cannot confirm an empty apply.
+
+### Fixed
+- Pre-release detection was previously based on the version number major component
+  being zero (v0.x.x = pre-release). ADAM now reads the full build tag instead,
+  so a tagged release such as v1.0.0 correctly shows a pink release pill,
+  and any build with a pre-release suffix in its tag (such as v0.9.0-preview.1)
+  correctly shows yellow. Development builds between tags are also shown as
+  pre-release.
+- When ADAM was connected to one Power BI file and a second file launched ADAM
+  from the External Tools ribbon, any in-progress Apply window for the first file
+  was left open in the background. The Apply window is now dismissed automatically
+  when ADAM switches to a new model, and the layout queue from the previous file
+  is cleared so it cannot be accidentally applied to the wrong model.
+- In dark mode, the text cursor was invisible when clicking into a diagram name
+  field in the Apply window because it defaulted to the system colour. It now
+  matches the text colour and is clearly visible in both themes.
+- In light mode, the Apply Layout button on the main window and the Apply Now
+  button in the Apply window appeared dark navy instead of purple. Both buttons
+  now consistently use the brand purple colour in light and dark mode.
+- The version shown in the About window now matches the version pill on the main
+  window. Both display the full build string including any pre-release suffix, so
+  you see the same version wherever you look.
+- The "Resolve all" batch buttons in the Apply window were showing even when only
+  one diagram had a naming conflict, which made no sense since there was nothing
+  to batch. They now only appear once there are two or more conflicts to resolve
+  at once.
+- If you renamed a conflicting diagram to a name that didn't already exist, the
+  OVERWRITE option stayed selectable even though there was nothing to overwrite at
+  that name. ADAM now switches that row to ADD AS NEW automatically and greys out
+  OVERWRITE (with a tooltip explaining why) whenever your typed name doesn't match
+  an existing diagram. Toggling between the auto-generated names is unaffected —
+  this only applies once you've typed something custom.
+
+### Changed
+- The intermediate dialogs that previously appeared during the Apply flow — "Close
+  Power BI Desktop?", the .pbix unsupported format warning, "Add another layout
+  before applying?", and the per-diagram conflict dialogs — have all been replaced
+  by the new Apply window. There is now one confirmation step instead of up to
+  five.
+- For **.pbix** files, the Apply window clearly states upfront that Power BI
+  Desktop must be closed to write the layout, rather than asking mid-flow after
+  you have already committed to applying.
+- The Apply button colour is now used consistently across both the main window and
+  the Apply Now button in the Apply window.
+
+---
+
 ## [0.8.2] — 2026-06
 
 ### Added
@@ -34,7 +123,7 @@ Versions follow [Semantic Versioning](https://semver.org/).
 - `dependabot.yml` for automated dependency updates.
 - PR template and issue templates.
 - `CLAUDE.md` project context for AI-assisted development.
-- `docs/test-plan.md` manual test plan.
+- `docs/test-plans/test-plan-0.8.0.md` manual test plan.
 
 ### Fixed
 - When a `.pbip` file was open and a `.pbix` file with the same model name existed
