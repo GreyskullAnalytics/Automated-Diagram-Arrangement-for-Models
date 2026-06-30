@@ -6,6 +6,18 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.9.2] - 2026-06
+
+### Fixed
+- The "a new version is available" banner could appear even when you were
+  already running the latest version of ADAM. ADAM was comparing against an
+  internal build number that never reflected the real version, instead of the
+  version you actually see in the version pill and About window. It now
+  compares against your real version, so the banner only appears when a
+  genuinely newer release exists.
+
+---
+
 ## [0.9.1] - 2026-06
 
 ### Fixed
