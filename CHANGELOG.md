@@ -6,6 +6,18 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.9.1] - 2026-06
+
+### Fixed
+- The version pill could show pink (release) even when a build was published as
+  a pre-release on GitHub, because ADAM was guessing pre-release status from the
+  version number itself rather than checking how the release was actually
+  published. ADAM now reads the real pre-release flag from the matching GitHub
+  release, so the pill (and the update banner) always reflects what is shown on
+  the Releases page.
+
+---
+
 ## [0.9.0] — 2026-06
 
 ### Added

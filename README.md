@@ -8,7 +8,7 @@
 | Channel | Version | Description |
 |---------|---------|-------------|
 | **Release** | <!--RELEASE-->- | The latest fully tested release, recommended for most users. |
-| **Pre-release** | <!--PRERELEASE-->[v0.9.0](https://github.com/GreyskullAnalytics/Automated-Diagram-Arrangement-for-Models/releases/tag/v0.9.0) | ⚠️ Work in progress - features and behaviour may change and bugs may be present. Use at your own risk. |
+| **Pre-release** | <!--PRERELEASE-->[v0.9.1](https://github.com/GreyskullAnalytics/Automated-Diagram-Arrangement-for-Models/releases/tag/v0.9.1) | ⚠️ Work in progress - features and behaviour may change and bugs may be present. Use at your own risk. |
 
 ADAM automatically arranges the tables in your Power BI model view into clean, readable diagrams - eliminating the hours spent manually dragging tables around every time your model changes.
 
